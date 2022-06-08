@@ -1,0 +1,22 @@
+DLCD00P_Field_format = [
+'C4CN','A','10',
+'C4DLVN','N','3',
+'C4DCNM','A','60',
+'C4DAD0','A','60',
+'C4DAD1','A','60',
+'C4DAD2','A','60',
+'C4DAD3','A','60',
+'C4DAD4','A','20',
+'C4DAD5','A','20',
+'C4DAD6','A','60',
+'C4DPHN','A','20',
+'C4DFAX','A','20',
+'C4DXNO','A','10',
+'C4DXLOC','A','20',
+'C4CSTS','A','1',
+'C4SRCH','A','10',
+'C4CAR','A','2',
+'C4FAGC','A','2',
+'C4DSTP','A','3',
+'C4RUN','A','3'
+]
