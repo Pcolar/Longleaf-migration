@@ -20,7 +20,7 @@ DLPRC00P_record = DLPRC00P_encoding.keys()
 
 log_messages={}
 llmigration_table= 'price_file'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-Prices.csv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-input-test.csv'
 output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-Prices-test.tsv'
 skip_record = False
 previous_day = datetime.timedelta(1)

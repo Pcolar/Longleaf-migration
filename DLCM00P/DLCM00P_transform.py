@@ -2,7 +2,6 @@ import json
 import csv
 import datetime, time
 import os, sys
-from turtle import clear
 import requests
 import regex
 from cerberus import Validator
@@ -12,7 +11,7 @@ import mysql.connector
 # hidden parameters
 from secrets import *
 # field mapper and formats
-from customer_master_map  import *
+from DLCM00P_map  import *
 from DLCM00P_format import *
 
 # Globals
@@ -68,7 +67,7 @@ def DLCM00P_validate_fields(record, skip_record):
     # field specific mapping
     # length of C1CN should be 8
     while len(record['\ufeffC1CN']) < 8:
-        record['\ufeffC1CN'] = '0' + record['\ufeffC1CN']
+        record['\ufeffC1CN'] = '{:0>8}'.format(record['\ufeffC1CN'])
     log_messages['C1CN'] = record['\ufeffC1CN']
     
     # field specifics

@@ -25,7 +25,7 @@ DLIMB00P_record = DLIMB00P_encoding.keys()
 log_messages={}
 llmigration_table= 'title_file'
 input_filename =  '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIMB00P/DLIM00P-220611.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIMB00P/DLIMB00P-output-test.tsv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIMB00P/DLIM00P-220611-output.tsv'
 skip_record = False
 
 # regex
@@ -69,8 +69,11 @@ def database_insert(insert_record):
         
 def DLIMB00P_validate_fields(record, skip_record):
     # field specific mapping
-    log_messages['BJI'] = record['BJI']    
+    #log_messages['BJI'] = record['BJI']    
     # field specifics
+    
+    # normalize BJI
+    record['BJI']  = record['BJI'].strip('.,- ')
     # Flip Returnables value
     if record['BJFSIF'] == 'N':
         record['BJFSIF'] = 'Y'

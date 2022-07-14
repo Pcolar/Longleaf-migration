@@ -22,7 +22,7 @@ DLCD00P_record = DLCD00P_encoding.keys()
 
 log_messages={}
 llmigration_table= 'delivery_address'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P_part1_220601.csv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P_dedup_220629.csv'
 output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/test.tsv'
 skip_record = False
 
@@ -49,9 +49,11 @@ def loggily_json_message(log_message):
     response = requests.post(loggily_URI, data=payload)
     if response.status_code != 200:
         print(response)
+    log_json_message(log_message)
     log_message={}
             
-def database_insert(insert_record, insert_count):
+def database_insert(insert_record):
+    global insert_count
     placeholders = ', '.join(['%s'] * len(insert_record))
     columns = ', '.join(insert_record.keys())
     # fix for utf-8 keys
@@ -76,15 +78,19 @@ def DLCD00P_validate_fields(record, address_seq, skip_record):
     # field specifics
     # verify phone and fax number formats
     if len(record['C4DPHN']) > 0:
-        parsed_phone = phonenumbers.parse(record['C4DPHN'], record['C4DAD6'])
-        if not phonenumbers.is_valid_number(parsed_phone):
+        try:
+            parsed_phone = phonenumbers.parse(record['C4DPHN'], record['C4DAD6'])
+            phonenumbers.is_valid_number(parsed_phone)
+        except:
             log_messages['invalid phone number redacted'] = record['C4DPHN']
             record['C4DPHN'] = ''
             log_json_message(log_messages)
 
     if len(record['C4DFAX']) > 0:
-        parsed_phone = phonenumbers.parse(record['C4DFAX'], record['C4DAD6'])
-        if not phonenumbers.is_valid_number(parsed_phone):
+        try:
+            parsed_phone = phonenumbers.parse(record['C4DFAX'], record['C4DAD6'])
+            phonenumbers.is_valid_number(parsed_phone)      
+        except:
             log_messages['invalid fax number redacted'] = record['C4DFAX']
             record['C4DFAX'] = ''
             log_json_message(log_messages)
@@ -141,7 +147,7 @@ with open(input_filename) as csv_file:
         for x in range(0, len(DLCD00P_Field_format),3):
             output_record[DLCD00P_Field_format[x]] = ''
         
-        if row['Do Not Use Indicator'] == 'Y':
+        if row['Do Not Use Indicator'] == 'Y' or row['Customer ID'] == '':
             skip_record = True
         else:
             for col in field_map.keys():
@@ -176,6 +182,14 @@ with open(input_filename) as csv_file:
 
             #check all fields
             DLCD00P_validate_fields(output_record, address_seq, skip_record)
+            
+            # flag address seq GT 100 and skip record
+            if address_seq > 100:
+                skip_record = True
+                log_messages['Address count'] = address_seq
+                log_messages['Record ID'] = output_record['C4CN'] + ':' + output_record['C4DLVN']
+                log_messages['Status'] = 'record skipped'           
+                log_json_message(log_messages)
         if not skip_record:
             # validate output record to specification
             if not v.validate(output_record):
@@ -183,11 +197,10 @@ with open(input_filename) as csv_file:
                 log_messages['Record ID'] = output_record['C4CN'] + ':' + output_record['C4DLVN']
                 log_messages['Status'] = 'record skipped'           
                 log_json_message(log_messages)
-                loggily_json_message(log_messages)
             else:
                 values = output_record.values()
                 csvwriter.writerow(values)
-                database_insert(output_record, insert_count)
+                database_insert(output_record)
                 previous_C4CN = output_record['C4CN']
                 write_count += 1
 
