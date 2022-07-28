@@ -3,6 +3,7 @@ import csv
 import datetime, time
 import string
 import os, sys
+from turtle import clear
 import requests
 import regex
 from cerberus import Validator
@@ -22,8 +23,8 @@ DLCD00P_record = DLCD00P_encoding.keys()
 
 log_messages={}
 llmigration_table= 'delivery_address'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P_dedup_220629.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/test.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P-dedup-220722.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P-220722.tsv'
 skip_record = False
 
 # regex
@@ -162,15 +163,15 @@ with open(input_filename) as csv_file:
             output_record['C4DFAX'] = output_record['C4DFAX'].strip()
             
             # if the 'Book Customer Addresses Attention' field is not blank, shift the addresses lines by 1
-            if row['Book Customer Addresses Attention']:
+            if row['Attention']:
                 if output_record['C4DAD2']:
                     log_messages['Record ID'] = output_record['C4CN']
-                    log_messages['Attention Field'] = row['Book Customer Addresses Attention']
+                    log_messages['Attention Field'] = row['Attention']
                     log_messages['Status'] = 'no room for field'
                 else:
                     output_record['C4DAD2'] = output_record['C4DAD1']
                     output_record['C4DAD1'] = output_record['C4DAD0']
-                    output_record['C4DAD0'] = row['Book Customer Addresses Attention']
+                    output_record['C4DAD0'] = row['Attention']
                     
             # determine sequence number
             if int(previous_C4CN) == int(output_record['C4CN']):

@@ -23,3 +23,12 @@ field_map = {
 'I1CHGZ': 'Last Change Date',
 'I1CHGU': 'Last Change User ID'
 }
+
+I1STKR_map = {
+'P': 'PUBLISHED',
+'O': 'OP',
+'N': 'NYP',
+'E': 'NYP',
+'D': 'DISCONTD',
+'C': 'CANCELLED'
+}

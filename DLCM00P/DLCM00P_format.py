@@ -1,5 +1,5 @@
 DLCM00P_Field_format = [
-'\ufeffC1CN', 'A', '10',
+'C1CN', 'A', '10',
 'C1REGN', 'A', '60',
 'C1PIDN', 'A', '20',
 'C1PCNM', 'A', '60',

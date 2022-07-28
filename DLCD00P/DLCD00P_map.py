@@ -6,6 +6,6 @@ field_map = {
 'C4DAD2' : 'Address Line 3',
 'C4DAD3' : 'City',
 'C4DAD4' : 'State',
-'C4DAD6' : 'Country Id',
+'C4DAD6' : 'Address Country Id',
 'C4DAD5' : 'Zip Code'
 }
