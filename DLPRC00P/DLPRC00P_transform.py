@@ -20,8 +20,8 @@ DLPRC00P_record = DLPRC00P_encoding.keys()
 
 log_messages={}
 llmigration_table= 'price_file'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-input-test.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-Prices-test.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-220729.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-220729.tsv'
 skip_record = False
 previous_day = datetime.timedelta(1)
 
@@ -192,9 +192,9 @@ with open(input_filename) as csv_file:
         
         # convert dates to uniform format
         if row['History Dates']:
-            row['History Dates'] = datetime.datetime.strptime(row['History Dates'], "%b %d, %Y").strftime("%Y-%m-%d")
+            row['History Dates'] = datetime.datetime.strptime(row['History Dates'], "%b %d %Y").strftime("%Y-%m-%d")
         if row['List Date']:
-            row['List Date'] = datetime.datetime.strptime(row['List Date'], "%b %d, %Y").strftime("%Y-%m-%d")
+            row['List Date'] = datetime.datetime.strptime(row['List Date'], "%b %d %Y").strftime("%Y-%m-%d")
            
         for col in field_map.keys():
                 # move data to output column

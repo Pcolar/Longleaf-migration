@@ -7,7 +7,6 @@ import os, sys
 import requests
 import regex
 from cerberus import Validator
-import phonenumbers
 import mysql.connector
 
 # hidden parameters
@@ -142,7 +141,7 @@ with open(input_filename) as csv_file:
                 create_date = datetime.datetime.strptime(row['Create Date'], "%m/%d/%Y")
             if (not row['Last Purchase Date']) or purchase_date < date_limit: # 1/1/2019
                 if create_date < create_limit:
-                    print(output_record['C1CN'], ',', create_date, ',', purchase_date)
+                    # print(output_record['C1CN'], ',', create_date, ',', purchase_date)
                     database_update(output_record)
                 else:
                     skip_record = True

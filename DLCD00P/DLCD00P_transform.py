@@ -23,8 +23,8 @@ DLCD00P_record = DLCD00P_encoding.keys()
 
 log_messages={}
 llmigration_table= 'delivery_address'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P-dedup-220722.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P-220722.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P-dedup-220729.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P-220729.tsv'
 skip_record = False
 
 # regex

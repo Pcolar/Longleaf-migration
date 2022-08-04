@@ -20,8 +20,8 @@ DLCC00P_encoding = {'C5CN': 'ascii','C5CTYP': 'ascii','C5EFDT': 'ascii','C5CODE'
 DLCC00P_validator_schema = {'C5CN':{'type':'string','required':True,'maxlength':10},'C5CTYP':{'type':'string','required':True,'maxlength':8},'C5EFDT':{'type':'string','required':True,'maxlength':10},'C5CODE':{'type':'string','required':True,'maxlength':3}}
 DLCC00P_record = DLCC00P_encoding.keys()
 llmigration_table='customer_classification'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCC00P/DLCM00P-220715.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCC00P/DLCC00P-output-220715.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCC00P/Customer-Master-DLCM00P-220726.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCC00P/DLCC00P-220729.tsv'
 skip_record = False
 
 # regex

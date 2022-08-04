@@ -85,9 +85,6 @@ def DLCM00P_validate_fields(record, skip_record):
             log_messages['invalid fax number redacted'] = record['C1FAX']
             record['C1FAX'] = ''
             log_json_message(log_messages)
-    # if not mapped, set default value
-    if not record['C1BN'] or record['C1BN'] == '0':
-        record['C1BN'] = '111170'
     # limit C1CMNT to 40 chars and redact non-printables
     record['C1CMNT'] = re.sub(redact_char, "", record['C1CMNT'])[0:39]
     # Map C1CTO
@@ -248,7 +245,7 @@ with open(input_filename) as csv_file:
         output_record['C1CIAC'] = '0'
         output_record['C1IBR'] = '10'
         output_record['C1WH'] = '21'
-        output_record['C1ONRF'] = 'N'
+        output_record['C1ONRF'] = 'Y'
         output_record['C1CUTO'] = 'N'
         output_record['C1BOCR'] = '1'
         output_record['C1INCA'] = 'N'
@@ -275,6 +272,13 @@ with open(input_filename) as csv_file:
         else:
             if output_record['C1CSTS'] == 'N':
                 output_record['C1CSTS'] = 'S'
+        # map C1BN
+        # if not mapped, set default value
+        if (not row['Default Order Bill To ID']) or row['Default Order Bill To ID'] == '0':
+            if row['ACCOUNT NUMBER']:
+                output_record['C1BN'] = row['ACCOUNT NUMBER']
+            else:
+                output_record['C1BN'] = '111170'
 
         # map C1CBOA
         if not output_record['C1CBOA']:

@@ -26,8 +26,8 @@ DLIM00P_encoding ={'I1CLS':'ascii','I1DIV':'ascii','I1GRP':'ascii','I1CAT':'asci
 DLIM00P_validator_schema = {'I1CLS':{'type':'string','maxlength':3,'empty':True},'I1DIV':{'type':'string','maxlength':3,'empty':False},'I1GRP':{'type':'string','maxlength':3,'empty':False},'I1CAT':{'type':'string','maxlength':3,'empty':True},'I1SCT':{'type':'string','maxlength':3,'empty':True},'I1I':{'type':'string','maxlength':20,'required':True},'I1AI':{'type':'string','maxlength':20,'empty':True},'I1SUPI':{'type':'string','maxlength':20,'empty':True},'I1IDSC':{'type':'string','maxlength':60,'empty':True},'I1IEDC':{'type':'string','maxlength':60,'empty':True},'I1CMNT':{'type':'string','maxlength':40,'empty':True},'I1STKR':{'type':'string','maxlength':10,'empty':True},'I1BRNC':{'type':'string','maxlength':3,'empty':True},'I1PRFC':{'type':'string','maxlength':3,'empty':True},'I1IDIS':{'type':'string','maxlength':3,'empty':True},'I1EFEX':{'type':'string','maxlength':1,'empty':True},'I1ORGN':{'type':'string','maxlength':4,'empty':True},'I1UOM':{'type':'string','maxlength':3,'empty':True},'I1PPER':{'type':'string','maxlength':7,'empty':True},'I1CPER':{'type':'string','maxlength':7,'empty':True},'I1PKG':{'type':'string','maxlength':5,'empty':True},'I1RLSN':{'type':'string','maxlength':4,'empty':True},'I1OSRD':{'type':'string','maxlength':10,'empty':True},'I1CSMC':{'type':'string','maxlength':4,'empty':True},'I1PACK':{'type':'string','maxlength':1,'empty':True},'I1ABC':{'type':'string','maxlength':1,'empty':True},'I1STKF':{'type':'string','maxlength':1,'empty':True},'I1ILCC':{'type':'string','maxlength':3,'empty':True},'I1PTWC':{'type':'string','maxlength':3,'empty':True},'I1LPF':{'type':'string','maxlength':1,'empty':True},'I1CFBF':{'type':'string','maxlength':1,'empty':True},'I1FRCHG':{'type':'string','maxlength':1,'empty':True},'I1ISTS':{'type':'string','maxlength':1,'empty':True},'I1BMTH':{'type':'string','maxlength':3,'empty':True},'I1EFCS':{'type':'string','maxlength':15,'empty':True},'I1EDDS':{'type':'string','maxlength':5,'empty':True},'I1OSPR':{'type':'string','maxlength':13,'empty':True},'I1DTYR':{'type':'string','maxlength':5,'empty':True},'I1TRFC':{'type':'string','maxlength':20,'empty':True},'I1IGLC':{'type':'string','maxlength':10,'empty':True},'I1CRTQ':{'type':'string','maxlength':5,'empty':True},'I1VOL':{'type':'string','maxlength':9,'empty':True},'I1VLWT':{'type':'string','maxlength':9,'empty':True},'I1WGHN':{'type':'string','maxlength':9,'empty':True},'I1WGHT':{'type':'string','maxlength':9,'empty':True},'I1LNG':{'type':'string','maxlength':7,'empty':True},'I1WDTH':{'type':'string','maxlength':7,'empty':True},'I1DPTH':{'type':'string','maxlength':7,'empty':True},'I1EXTV':{'type':'string','maxlength':9,'empty':True},'I1EXTM':{'type':'string','maxlength':2,'empty':True},'I1IBCD':{'type':'string','maxlength':20,'empty':True},'I1IWSC':{'type':'string','maxlength':3,'empty':True},'I1REGD':{'type':'string','maxlength':45,'empty':True},'I1REGU':{'type':'string','maxlength':10,'empty':True},'I1CHGZ':{'type':'string','maxlength':45,'empty':True},'I1CHGU':{'type':'string','maxlength':10,'empty':True},'I1LANG':{'type':'string','maxlength':3,'empty':True},'I1EDTT':{'type':'string','maxlength':3,'empty':True},'I1TXC1':{'type':'string','maxlength':3,'empty':True},'I1TXP1':{'type':'string','maxlength':6,'empty':True},'I1TXC2':{'type':'string','maxlength':3,'empty':True},'I1TXP2':{'type':'string','maxlength':6,'empty':True},'I1TXC3':{'type':'string','maxlength':3,'empty':True},'I1TXP3':{'type':'string','maxlength':6,'empty':True},'I1TXC4':{'type':'string','maxlength':3,'empty':True},'I1TXP4':{'type':'string','maxlength':6,'empty':True},'I1TXC5':{'type':'string','maxlength':3,'empty':True},'I1TXP5':{'type':'string','maxlength':6,'empty':True}}
 DLIM00P_record = DLIM00P_encoding.keys()
 llmigration_table='item_master'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-220724.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-220727.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-220731.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-220803.tsv'
 skip_record = False
 pub_status_code = ''
 last_sold_date = ''
@@ -89,28 +89,6 @@ def DLIM00P_validate_fields(record):
             log_messages['I1CLS'] = record['I1CLS']
             log_messages['Record ID'] = record['I1I']
                   
-    # map I1GRP & I1PKG
-    try:
-        record['I1PKG'] = pkg_group[record['I1GRP']]
-    except KeyError:
-        log_messages['I1PKG map failed'] = record['I1GRP']
-        record['I1PKG'] = ''
-    try:
-        record['I1GRP'] = item_group[record['I1GRP']]
-    except KeyError:
-        log_messages['I1GRP map failed'] = record['I1GRP']
-        record['I1GRP'] = ''
-    # skip record if primary key is blank
-    if not record['I1I']:
-        skip_record = True
-        log_messages['I1I is empty'] = 'record skipped'
-    # map I1CAT
-    record['I1CAT'] = ''
-    #try:
-    #    record['I1CAT'] = DLIM00P_minor_disc[record['I1CAT']]
-    #except KeyError:
-        # truncate to 3 characters
-    #    record['I1CAT'] = record['I1CAT'][0:3]
     # map discount        
     if len(record['I1IDIS']) > 0:
         try:
@@ -118,7 +96,7 @@ def DLIM00P_validate_fields(record):
         except KeyError:
             record['I1IDIS'] = ''
             
-    # Set default values for I1LPF, I1CFBF, I1TXP1, I1TXP2, I1TXP3, I1TXP4, I1TXP5, I1UOM, I1CSMC
+    # Set default values for I1LPF, I1CFBF, I1TXP1, I1TXP2, I1TXP3, I1TXP4, I1TXP5, I1UOM, I1CSMC, I1EDTT
     record['I1LPF'] = 'Y'
     record['I1CFBF'] = 'N'
     record['I1TXP1'] = '{:.2f}'.format(100.00)
@@ -130,6 +108,7 @@ def DLIM00P_validate_fields(record):
     record['I1CSMC'] = 'FIFO'
     record['I1PPER'] = '1'
     record['I1CPER'] = '1'
+    record['I1EDTT'] = ''
     
     if len(record['I1OSRD']) == 0:
         record['I1OSRD'] = '0001-01-01'
@@ -274,11 +253,15 @@ for row in input_rec:
             else:
                 div_key = row['Company NO'] + row['Publisher ID']
                 div_key = div_key.strip()
-                div_key = div_key.strip('0')
+                div_key = div_key.lstrip('0')
                 try:
-                    output_record['I1DIV'] = I1DIV_map[div_key]
+                    output_record['I1DIV'] = I1DIV_map[div_key].zfill(3)
                 except KeyError:
                     output_record['I1DIV'] = ''
+                    log_messages['I1DIV'] = 'mapping error'
+                    log_messages['Key'] = div_key
+                    log_messages['Record ID'] = output_record['I1I']
+                    log_json_message
         # For those items that don't have valid/unique ISBN13s,
         # use the Elan Product ID as the Item # and leave the Alternate Item blank
         if not output_record['I1I']:
@@ -287,7 +270,30 @@ for row in input_rec:
         else:
             # strip quotes, delimiters and whitespace from ISBN
             output_record['I1I'] = output_record['I1I'].strip(' -.''')
-        # save for validation checks
+            
+        # map I1GRP & I1PKG
+        try:
+            output_record['I1PKG'] = pkg_group[output_record['I1GRP']]
+        except KeyError:
+            log_messages['I1PKG map failed'] = output_record['I1GRP']
+            output_record['I1PKG'] = ''
+        try:
+            output_record['I1GRP'] = item_group[output_record['I1GRP']]
+        except KeyError:
+            log_messages['I1GRP map failed'] = output_record['I1GRP']
+            output_record['I1GRP'] = ''
+        # skip record if primary key is blank
+        if not output_record['I1I']:
+            skip_record = True
+            log_messages['I1I is empty'] = 'record skipped'
+        # map I1CAT
+        output_record['I1CAT'] = ''
+        #try:
+        #    record['I1CAT'] = DLIM00P_minor_disc[record['I1CAT']]
+        #except KeyError:
+            # truncate to 3 characters
+        #    record['I1CAT'] = record['I1CAT'][0:3]
+            # save for validation checks
         pub_status_code = row['I1STKR']
         last_sold_date = row['Last Sold Date']
         
@@ -314,6 +320,7 @@ for row in input_rec:
         except KeyError:
             log_messages['I1STKR map error'] = output_record['I1STKR']
             output_record['I1STKR'] = ''
+            
         # check all fields
         if not skip_record:
             DLIM00P_validate_fields(output_record)
