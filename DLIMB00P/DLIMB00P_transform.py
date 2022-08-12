@@ -73,7 +73,7 @@ def database_insert(insert_record):
         skip_record = True
         
 def DLIMB00P_validate_fields(record):
-    global skip_record
+    global skip_record, log_messages
     # field specific mapping
     #log_messages['BJI'] = record['BJI']    
     # field specifics
@@ -88,7 +88,13 @@ def DLIMB00P_validate_fields(record):
     if record['BJRLSD']:
         record['BJRLSD'] =  datetime.datetime.strptime(record['BJRLSD'], "%b %d, %Y").strftime("%Y-%m-%d")
     if record['BJCSED']:
-        record['BJCSED'] =  datetime.datetime.strptime(record['BJCSED'], "%b %d, %Y").strftime("%Y-%m-%d")    
+        record['BJCSED'] =  datetime.datetime.strptime(record['BJCSED'], "%b %d, %Y").strftime("%Y-%m-%d")
+        if record['BJCSED'] < record['BJRLSD']:
+            log_messages['Cease Date is less than Release Date'] = str(record['BJCSED']) + ':' + str(record['BJRLSD'])
+            log_messages['Record ID'] = record['BJI']
+            log_json_message(log_messages)
+            record['BJCSED'] = '9999-12-31'
+        
 
 ### MAIN ###  
 # field validator setup
@@ -174,7 +180,18 @@ for row in input_rec:
     #check all fields
     if not skip_record:
         DLIMB00P_validate_fields(output_record)
-            
+    # verify an item master record exists
+    if not skip_record:
+         # retrieve the corresponding item master
+        try:
+            qry = 'Select I1I from item_master where I1I = %s'
+            cursor.execute(qry, output_record['I1I'])
+            connection.commit()
+            item_master_rec = cursor.fetchall()
+        except mysql.connector.DatabaseError as error:
+            log_messages['MySQL_query'] = str(error)
+            log_messages['item_master not found'] = output_record['I1I']
+            skip_record = True       
     if not skip_record:
         # validate output record to specification
         if not v.validate(output_record):

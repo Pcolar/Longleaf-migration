@@ -50,7 +50,7 @@ def loggily_json_message(log_message):
     log_message={}
             
 def database_insert(insert_record):
-    global insert_count
+    global insert_count, skip_record
     placeholders = ', '.join(['%s'] * len(insert_record))
     columns = ', '.join(insert_record.keys())
     # fix for utf-8 keys
@@ -63,6 +63,7 @@ def database_insert(insert_record):
     except mysql.connector.DatabaseError as error:
         log_messages['MySQL_insert'] = str(error)
         log_json_message(log_messages)
+        skip_record = True
     
 def DLPRC00P_validate_fields(record, skip_record):
     # field specific mapping
@@ -84,7 +85,7 @@ def DLPRC00P_validate_fields(record, skip_record):
         record['I9EXPD'] = datetime.datetime.strptime(previous_date, "%Y-%m-%d") - previous_day
         record['I9EXPD']  = record['I9EXPD'].strftime("%Y-%m-%d")
     else:
-        record['I9EXPD'] = '99999999'
+        record['I9EXPD'] = '9999-12-31'
         previous_ISBN13 = record['I9I']
     previous_date = save_date
     # default currency to 'U' - USD
@@ -151,7 +152,7 @@ except mysql.connector.Error as error:
     log_messages['MySQL_connection'] = str(error)
     log_json_message(log_messages)
     print(error)
-    exit()
+    sys.exit()
 if connection.is_connected():
     db_Info = connection.get_server_info()
     cursor = connection.cursor()
@@ -212,15 +213,15 @@ with open(input_filename) as csv_file:
                 loggily_json_message(log_messages)
             else:
                 values = output_record.values()
-                csvwriter.writerow(values)
                 database_insert(output_record)
-                write_count += 1
+                if not skip_record:
+                    csvwriter.writerow(values)
+                    write_count += 1
 # close database connection
 if connection.is_connected():
     cursor.close()
     connection.close()
     print("MySQL connection is closed")            
-
 
 log_messages['Records Processed']= line_count
 log_messages['Records Written to output file']= write_count

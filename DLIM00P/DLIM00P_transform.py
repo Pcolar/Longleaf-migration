@@ -12,6 +12,7 @@ import mysql.connector
 from secrets import *
 # field mapper and formats
 from DLIM00P_master_map import *
+from DLIM00P_maps import *
 from DLIM00P_group_map import *
 from DLIM00P_I1DIV_map import *
 from DLIM00P_I1IDIS_map import *
@@ -26,8 +27,8 @@ DLIM00P_encoding ={'I1CLS':'ascii','I1DIV':'ascii','I1GRP':'ascii','I1CAT':'asci
 DLIM00P_validator_schema = {'I1CLS':{'type':'string','maxlength':3,'empty':True},'I1DIV':{'type':'string','maxlength':3,'empty':False},'I1GRP':{'type':'string','maxlength':3,'empty':False},'I1CAT':{'type':'string','maxlength':3,'empty':True},'I1SCT':{'type':'string','maxlength':3,'empty':True},'I1I':{'type':'string','maxlength':20,'required':True},'I1AI':{'type':'string','maxlength':20,'empty':True},'I1SUPI':{'type':'string','maxlength':20,'empty':True},'I1IDSC':{'type':'string','maxlength':60,'empty':True},'I1IEDC':{'type':'string','maxlength':60,'empty':True},'I1CMNT':{'type':'string','maxlength':40,'empty':True},'I1STKR':{'type':'string','maxlength':10,'empty':True},'I1BRNC':{'type':'string','maxlength':3,'empty':True},'I1PRFC':{'type':'string','maxlength':3,'empty':True},'I1IDIS':{'type':'string','maxlength':3,'empty':True},'I1EFEX':{'type':'string','maxlength':1,'empty':True},'I1ORGN':{'type':'string','maxlength':4,'empty':True},'I1UOM':{'type':'string','maxlength':3,'empty':True},'I1PPER':{'type':'string','maxlength':7,'empty':True},'I1CPER':{'type':'string','maxlength':7,'empty':True},'I1PKG':{'type':'string','maxlength':5,'empty':True},'I1RLSN':{'type':'string','maxlength':4,'empty':True},'I1OSRD':{'type':'string','maxlength':10,'empty':True},'I1CSMC':{'type':'string','maxlength':4,'empty':True},'I1PACK':{'type':'string','maxlength':1,'empty':True},'I1ABC':{'type':'string','maxlength':1,'empty':True},'I1STKF':{'type':'string','maxlength':1,'empty':True},'I1ILCC':{'type':'string','maxlength':3,'empty':True},'I1PTWC':{'type':'string','maxlength':3,'empty':True},'I1LPF':{'type':'string','maxlength':1,'empty':True},'I1CFBF':{'type':'string','maxlength':1,'empty':True},'I1FRCHG':{'type':'string','maxlength':1,'empty':True},'I1ISTS':{'type':'string','maxlength':1,'empty':True},'I1BMTH':{'type':'string','maxlength':3,'empty':True},'I1EFCS':{'type':'string','maxlength':15,'empty':True},'I1EDDS':{'type':'string','maxlength':5,'empty':True},'I1OSPR':{'type':'string','maxlength':13,'empty':True},'I1DTYR':{'type':'string','maxlength':5,'empty':True},'I1TRFC':{'type':'string','maxlength':20,'empty':True},'I1IGLC':{'type':'string','maxlength':10,'empty':True},'I1CRTQ':{'type':'string','maxlength':5,'empty':True},'I1VOL':{'type':'string','maxlength':9,'empty':True},'I1VLWT':{'type':'string','maxlength':9,'empty':True},'I1WGHN':{'type':'string','maxlength':9,'empty':True},'I1WGHT':{'type':'string','maxlength':9,'empty':True},'I1LNG':{'type':'string','maxlength':7,'empty':True},'I1WDTH':{'type':'string','maxlength':7,'empty':True},'I1DPTH':{'type':'string','maxlength':7,'empty':True},'I1EXTV':{'type':'string','maxlength':9,'empty':True},'I1EXTM':{'type':'string','maxlength':2,'empty':True},'I1IBCD':{'type':'string','maxlength':20,'empty':True},'I1IWSC':{'type':'string','maxlength':3,'empty':True},'I1REGD':{'type':'string','maxlength':45,'empty':True},'I1REGU':{'type':'string','maxlength':10,'empty':True},'I1CHGZ':{'type':'string','maxlength':45,'empty':True},'I1CHGU':{'type':'string','maxlength':10,'empty':True},'I1LANG':{'type':'string','maxlength':3,'empty':True},'I1EDTT':{'type':'string','maxlength':3,'empty':True},'I1TXC1':{'type':'string','maxlength':3,'empty':True},'I1TXP1':{'type':'string','maxlength':6,'empty':True},'I1TXC2':{'type':'string','maxlength':3,'empty':True},'I1TXP2':{'type':'string','maxlength':6,'empty':True},'I1TXC3':{'type':'string','maxlength':3,'empty':True},'I1TXP3':{'type':'string','maxlength':6,'empty':True},'I1TXC4':{'type':'string','maxlength':3,'empty':True},'I1TXP4':{'type':'string','maxlength':6,'empty':True},'I1TXC5':{'type':'string','maxlength':3,'empty':True},'I1TXP5':{'type':'string','maxlength':6,'empty':True}}
 DLIM00P_record = DLIM00P_encoding.keys()
 llmigration_table='item_master'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-220731.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-220803.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-220807.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-220808.tsv'
 skip_record = False
 pub_status_code = ''
 last_sold_date = ''
@@ -36,30 +37,33 @@ last_sold_date = ''
 alpha = regex.compile('\w*')
 numb = regex.compile('\d*')
 redact_char = re.compile('[\r\n\t]*')
+I1DIV_match = re.compile('2222.*')
 # counters
 line_count = 0
 write_count = 0
 inserted_count = 0
 skip_count = 0
 
-def log_json_message(log_message):
+def log_json_message():
+    global log_messages
     """print out  in json tagged log message format"""
-    log_message['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    #log_message['program'] = os.path.basename(__file__)
-    print(json.dumps(log_message))
-    log_message={}
+    log_messages['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    print(json.dumps(log_messages))
+    log_messages={}
     
-def loggily_json_message(log_message):
+def loggily_json_message():
+    global log_messages
     """Push message to Loggily in json tagged log message format"""
-    log_message['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    payload=json.dumps(log_message)
+    log_messages['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    payload=json.dumps(log_messages)
     response = requests.post(loggily_URI, data=payload)
     if response.status_code != 200:
-        log_message['loggily error'] = response
-    log_json_message(log_message)
-    log_message={}
+        log_messages['loggily error'] = response
+    log_json_message()
+    log_messages={}
             
 def database_insert(insert_record):
+    global skip_record
     placeholders = ', '.join(['%s'] * len(insert_record))
     columns = ', '.join(insert_record.keys())
     # fix utf-8 column names
@@ -75,7 +79,8 @@ def database_insert(insert_record):
         log_messages['Record ID'] = insert_record['I1I']
         log_messages['Last sold'] = last_sold_date
         log_messages['Pub status'] = pub_status_code
-        log_json_message(log_messages)
+        log_json_message()
+        skip_record = True
         #sys.exit()
         
 def DLIM00P_validate_fields(record):
@@ -96,7 +101,7 @@ def DLIM00P_validate_fields(record):
         except KeyError:
             record['I1IDIS'] = ''
             
-    # Set default values for I1LPF, I1CFBF, I1TXP1, I1TXP2, I1TXP3, I1TXP4, I1TXP5, I1UOM, I1CSMC, I1EDTT
+    # Set default values for I1LPF, I1CFBF, I1TXP1, I1TXP2, I1TXP3, I1TXP4, I1TXP5, I1UOM, I1CSMC, I1EDTT, I1IGLC, I1CAT, I1EFEX
     record['I1LPF'] = 'Y'
     record['I1CFBF'] = 'N'
     record['I1TXP1'] = '{:.2f}'.format(100.00)
@@ -109,6 +114,9 @@ def DLIM00P_validate_fields(record):
     record['I1PPER'] = '1'
     record['I1CPER'] = '1'
     record['I1EDTT'] = ''
+    record['I1IGLC'] = ''
+    record['I1CAT'] = ''
+    record['I1EFEX'] = 'U'
     
     if len(record['I1OSRD']) == 0:
         record['I1OSRD'] = '0001-01-01'
@@ -211,7 +219,7 @@ try:
         password=llmigration_password)
 except mysql.connector.Error as error:
     log_messages['MySQL_connection'] = str(error)
-    log_json_message(log_messages)
+    log_json_message()
     print(error)
     exit()
 if connection.is_connected():
@@ -225,7 +233,7 @@ output_file = open(output_filename, 'w')
 csvwriter = csv.writer(output_file, delimiter='\t')
 
 log_messages['File created'] = output_filename
-log_json_message(log_messages)
+log_json_message()
 
 input_file = open(input_filename, 'r')
 # check for null values in input
@@ -245,23 +253,6 @@ for row in input_rec:
             output_record[col] = row[field_map[col]]
             
         # special mapping and exclusion
-        if row['Company NO']:
-            if int(row['Company NO']) == 2 or int(row['Company NO']) == 12:
-                log_messages['record skipped - I1CLS'] = row['Company NO']
-                loggily_json_message(log_messages)
-                skip_record = True
-            else:
-                div_key = row['Company NO'] + row['Publisher ID']
-                div_key = div_key.strip()
-                div_key = div_key.lstrip('0')
-                try:
-                    output_record['I1DIV'] = I1DIV_map[div_key].zfill(3)
-                except KeyError:
-                    output_record['I1DIV'] = ''
-                    log_messages['I1DIV'] = 'mapping error'
-                    log_messages['Key'] = div_key
-                    log_messages['Record ID'] = output_record['I1I']
-                    log_json_message
         # For those items that don't have valid/unique ISBN13s,
         # use the Elan Product ID as the Item # and leave the Alternate Item blank
         if not output_record['I1I']:
@@ -270,24 +261,72 @@ for row in input_rec:
         else:
             # strip quotes, delimiters and whitespace from ISBN
             output_record['I1I'] = output_record['I1I'].strip(' -.''')
-            
-        # map I1GRP & I1PKG
+
+        # I1DIV map
+        if row['Company NO']:
+            if int(row['Company NO']) == 2 or int(row['Company NO']) == 12:
+                log_messages['record skipped - I1CLS'] = row['Company NO']
+                loggily_json_message(log_messages)
+                skip_record = True
+            else:
+                map_key = row['Company NO'] + row['Major Disc ID']
+                map_key = map_key.strip()
+                map_key = map_key.lstrip('0')
+                # match 2222*
+                if I1DIV_match.match(output_record['I1DIV']):
+                    output_record['I1DIV'] = 'CCC'
+                else:
+                    try:
+                        output_record['I1DIV'] = I1DIV_map[map_key].zfill(3)
+                    except KeyError:
+                        output_record['I1DIV'] = ''
+                        log_messages['I1DIV'] = 'mapping error'
+                        log_messages['Company NO & Major Disc ID'] = map_key
+                        log_messages['Record ID'] = output_record['I1I']
+                        log_json_message()
+        # I1BRNC - leave blank - note for 8/11/2022
+        output_record['I1BRNC'] = ''
+        # Rotunda journals have the same Major Disc: 10EIT
+        #if row['Major Disc ID'] == '10EIT':
+        #    try:
+        #        output_record['I1BRNC'] = I1BRNC_rotunda_map[row['Elan Product ID']]
+        #    except KeyError:
+        #        log_messages['I1BRNC Rotunda mapping error'] = row['Elan Product ID']
+        #        log_messages['Record ID'] = output_record['I1I']
+        #        log_json_message()
+        #        output_record['I1BRNC'] = ''
+        #else:
+        #    
+        #    map_key = row['Company NO'] + row['Publisher ID']
+        #    map_key = map_key.strip()
+        #    map_key = map_key.lstrip('0')
+        #    try:
+        #        output_record['I1BRNC'] = I1BRNC_primary_map[map_key][0]
+        #        output_record['I1DIV'] =  I1BRNC_primary_map[map_key][1]
+        #        
+        #    except KeyError:
+        #        log_messages['I1BRNC'] = 'primary mapping error'
+        #        log_messages['Company NO & Publisher ID'] = map_key
+        #        log_messages['Record ID'] = output_record['I1I']
+        #        log_json_message()
+        #        output_record['I1BRNC'] = ''
+                
+        # Map I1PKG
         try:
-            output_record['I1PKG'] = pkg_group[output_record['I1GRP']]
+            output_record['I1PKG'] = pkg_group[row['I1GRP']]
         except KeyError:
-            log_messages['I1PKG map failed'] = output_record['I1GRP']
+            log_messages['I1PKG map failed'] = row['I1GRP']
             output_record['I1PKG'] = ''
         try:
-            output_record['I1GRP'] = item_group[output_record['I1GRP']]
+            output_record['I1GRP'] = item_group[row['I1GRP']]
         except KeyError:
-            log_messages['I1GRP map failed'] = output_record['I1GRP']
+            log_messages['I1GRP map failed'] = row['I1GRP']
             output_record['I1GRP'] = ''
         # skip record if primary key is blank
         if not output_record['I1I']:
             skip_record = True
             log_messages['I1I is empty'] = 'record skipped'
-        # map I1CAT
-        output_record['I1CAT'] = ''
+        
         #try:
         #    record['I1CAT'] = DLIM00P_minor_disc[record['I1CAT']]
         #except KeyError:
@@ -329,16 +368,21 @@ for row in input_rec:
             # validate output record to specification
             if not v.validate(output_record):
                 log_messages= v.errors
+                if 'I1GRP' in v.errors:
+                    log_messages['IGRP input'] = row['I1GRP']
                 log_messages['Record ID'] = output_record['I1I']
                 log_messages['Status'] = 'record skipped'           
-                loggily_json_message(log_messages)
+                log_json_message()
+                skip_count += 1
                 #print(output_record)
                 #loggily_json_message(log_messages)
             else:
                 values = output_record.values()
-                csvwriter.writerow(values)
                 database_insert(output_record)
-                write_count += 1
+                # don't write to output file if database insert failed
+                if not skip_record:
+                    csvwriter.writerow(values)
+                    write_count += 1
         else:
             skip_count += 1
 
@@ -352,5 +396,5 @@ log_messages['Records Processed']= line_count
 log_messages['Records Skipped']= skip_count
 log_messages['Records Written to output file']= write_count
 log_messages['Records Written to database']= inserted_count
-log_json_message(log_messages)
+log_json_message()
 sys.exit()

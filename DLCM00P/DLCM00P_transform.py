@@ -20,8 +20,8 @@ DLCM00P_encoding = {'C1CN': 'ascii','C1REGN': 'utf-8','C1PIDN': 'utf-8','C1PCNM'
 DLCM00P_validator_schema = {'C1CN':{'type':'string','required':True,'maxlength':8},'C1REGN':{'type':'string','empty':True,'maxlength':60},'C1PDN':{'type':'string','empty':True,'maxlength':20},'C1PCNM':{'type':'string','empty':True,'maxlength':60},'C1PAD0':{'type':'string','empty':True,'maxlength':60},'C1PAD1':{'type':'string','empty':True,'maxlength':60},'C1PAD2':{'type':'string','empty':True,'maxlength':60},'C1PAD3':{'type':'string','empty':True,'maxlength':60},'C1PAD4':{'type':'string','empty':True,'maxlength':60},'C1PAD5':{'type':'string','empty':True,'maxlength':60},'C1PAD6':{'type':'string','empty':True,'maxlength':60},'C1PDLVN':{'type':'string','empty':True,'max':999,'min':0},'C1DXNO':{'type':'string','empty':True,'maxlength':10},'C1DXLOC':{'type':'string','empty':True,'maxlength':20},'C1PHN':{'type':'string','empty':True,'maxlength':20},'C1FAX':{'type':'string','empty':True,'maxlength':20},'C1CSTS':{'type':'string','empty':False,'maxlength':1,'allowed':['A','S','C']},'C1CONO':{'type':'string','empty':True,'maxlength':2},'C1BR':{'type':'string','empty':True,'maxlength':2},'C1RGN':{'type':'string','empty':True,'maxlength':2},'C1SLRP':{'type':'string','empty':True,'maxlength':6},'C1CDIS':{'type':'string','empty':True,'maxlength':3},'C1PRCD':{'type':'string','empty':True,'maxlength':2},'C1XINV':{'type':'string','empty':True,'max':999,'min':0},'C1XNVF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CTXC':{'type':'string','empty':True,'maxlength':3},'C1TXNO':{'type':'string','empty':True,'maxlength':15},'C1PYTC':{'type':'string','empty':True,'maxlength':2},'C1ILIC':{'type':'string','empty':True,'maxlength':20},'C1SAN':{'type':'string','empty':True,'maxlength':20},'C1BN':{'type':'string','empty':True,'maxlength':10},'C1CCLS':{'type':'string','empty':True,'maxlength':3},'C1EXCD':{'type':'string','empty':True,'maxlength':1},'C1CRLM':{'type':'string','empty':True},'C1CIAC':{'type':'string','empty':True},'C1CIBR':{'type':'string','empty':True,'maxlength':2},'C1WH':{'type':'string','empty':True,'maxlength':2},'C1CAR':{'type':'string','empty':True,'maxlength':2},'C1FAGC':{'type':'string','empty':True,'maxlength':2},'C1RUN':{'type':'string','empty':True,'maxlength':3},'C1DSTP':{'type':'string','empty':True,'maxlength':3},'C1STTY':{'type':'string','empty':True,'maxlength':1},'C1CMNT':{'type':'string','empty':True,'maxlength':40},'C1OIF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1DLVP':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1DLOP':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CBOA':{'type':'string','empty':True,'maxlength':1},'C1OCON':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1SBI':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1ONRF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CUTO':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1MIF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1FSCF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CIEC':{'type':'string','empty':True,'maxlength':1},'C1INCA':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1DFCF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1AFCG':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CFRT':{'type':'string','empty':True,'maxlength':1},'C1CL1':{'type':'string','empty':True,'maxlength':3},'C1CL2':{'type':'string','empty':True,'maxlength':3},'C1CL3':{'type':'string','empty':True,'maxlength':3},'C1CL4':{'type':'string','empty':True,'maxlength':3},'C1CL5':{'type':'string','empty':True,'maxlength':3},'C1MJS':{'type':'string','empty':True,'maxlength':3},'C1STN':{'type':'string','empty':True,'maxlength':6},'C1BOCR':{'type':'string','empty':True,'maxlength':1},'C1ECR':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1STMT':{'type':'string','empty':True,'maxlength':1},'C1RLSP':{'type':'string','empty':True,'maxlength':6},'C1CTO':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CASC':{'type':'string','empty':True,'maxlength':20},'C1REGZ':{'type':'string','empty':True,'maxlength':45},'C1REGU':{'type':'string','empty':True,'maxlength':10},'C1CHGZ':{'type':'string','empty':True,'maxlength':45},'C1CHGU':{'type':'string','empty':True,'maxlength':10}}
 DLCM00P_record = DLCM00P_encoding.keys()
 llmigration_table='customer_master'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCM00P/Customer Master - DLCM00P 220726.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCM00P/DLCM00P-220727.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCM00P/Customer Master-DLCM00P-220807.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCM00P/DLCM00P-220808.tsv'
 skip_record = False
 
 # regex
@@ -53,7 +53,7 @@ def loggily_json_message(log_message):
 def database_insert(insert_record):
     placeholders = ', '.join(['%s'] * len(insert_record))
     columns = ', '.join(insert_record.keys())
-    global insert_count
+    global insert_count, skip_record
     # fix for utf-8 keys
     columns = columns.replace('\ufeff','')
     try:
@@ -64,6 +64,7 @@ def database_insert(insert_record):
     except mysql.connector.DatabaseError as error:
         log_messages['MySQL_insert'] = str(error)
         log_json_message(log_messages)
+        skip_record = True
         
 def DLCM00P_validate_fields(record, skip_record):
     # field specific mapping
@@ -320,9 +321,10 @@ with open(input_filename) as csv_file:
                 #loggily_json_message(log_messages)
             else:
                 values = output_record.values()
-                csvwriter.writerow(values)
                 database_insert(output_record)
-                write_count += 1
+                if not skip_record:
+                    csvwriter.writerow(values)        
+                    write_count += 1
         else:
             skipped_count += 1
 

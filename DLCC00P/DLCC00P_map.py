@@ -1,6 +1,3 @@
-from turtle import clear
-
-
 field_map = {'C5CN': 'Name Id'}
 
 CCTOB_map = {

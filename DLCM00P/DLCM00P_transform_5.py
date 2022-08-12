@@ -20,14 +20,16 @@ DLCD00P_validator_schema = {'C1CN':{'type':'string','required':True,'maxlength':
 DLCD00P_record = DLCD00P_encoding.keys()
 llmigration_table='customer_master'
 input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCM00P/DLCD00P-Book Customer Addresses.csv'
+input_filename_2 = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCM00P/Book Customer Billing Info.csv'
 skip_record = False
+customer_info = {}
 
 # regex
 alpha = regex.compile('\w*')
 numb = regex.compile('\d*')
 
 # date comparisons
-date_limit = datetime.datetime(2019,1,1)
+purchase_limit = datetime.datetime(2019,1,1)
 create_limit = datetime.datetime(2022,1,1)
 
 # counters
@@ -52,12 +54,12 @@ def loggily_json_message(log_message):
         print(response)
     log_message={}
             
-def database_update(update_record):
+def database_update(C1CN):
     global delete_count
     # fix for utf-8 keys
     try:
         query = "delete from customer_master where C1CN = %s"
-        field_data = (update_record['C1CN'], )
+        field_data = (C1CN, )
         cursor.execute(query, field_data)
         connection.commit()
         delete_count += 1
@@ -110,10 +112,11 @@ for field_index in range(0, len(DLCD00P_field_format),3):
     field_type = field_index + 1
     field_length = field_index + 2
 
+# load dates into dictionary for file #1
 with open(input_filename) as csv_file:
     cust_master = csv.DictReader(csv_file, delimiter=',')
     for row in cust_master:
-        line_count += 1
+        #line_count += 1
         # transform output record to field specifications
         skip_record = False
         log_messages = {}
@@ -126,29 +129,60 @@ with open(input_filename) as csv_file:
         output_record['C1CN'] = row['Customer ID']
         # length of C1CN should be 8
         if len(output_record['C1CN']) < 8:
-            output_record['C1CN'] = '{:0>8}'.format(output_record['C1CN'])
-        
+            output_record['C1CN'] = output_record['C1CN'].zfill(8)        
         # only update if a primary address record
-        if (not row['Address Type'] == 'PRI'):
-            skip_record = True
-        else:
-            # only delete If last-purchase-date is blank or less than 1/1/2019 and create-date less than 1/1/2022 
+        if row['Address Type'] == 'PRI':
             create_date = datetime.datetime(1900,1,1)
             purchase_date = datetime.datetime(1900,1,1)
             if row['Last Purchase Date']:
                 purchase_date = datetime.datetime.strptime(row['Last Purchase Date'], "%b %d, %Y")
             if row['Create Date']:
                 create_date = datetime.datetime.strptime(row['Create Date'], "%m/%d/%Y")
-            if (not row['Last Purchase Date']) or purchase_date < date_limit: # 1/1/2019
-                if create_date < create_limit:
-                    # print(output_record['C1CN'], ',', create_date, ',', purchase_date)
-                    database_update(output_record)
-                else:
-                    skip_record = True
-                
-        if skip_record:
-                skipped_count += 1
+            customer_info[output_record['C1CN']] = [create_date, purchase_date]
         
+# load dates into dictionary for file #2
+with open(input_filename_2) as csv_file:
+    cust_master = csv.DictReader(csv_file, delimiter=',')
+    for row in cust_master:
+        #line_count += 1
+        # transform output record to field specifications
+        skip_record = False
+        log_messages = {}
+        output_record = {}
+        # initialize output_record keys
+        for x in range(0, len(DLCD00P_field_format),3):
+            output_record[DLCD00P_field_format[x]] = ''
+
+        # Field specific mappings
+        output_record['C1CN'] = row['Customer Name ID']
+        # length should be 8
+        if len(output_record['C1CN']) < 8:
+            output_record['C1CN'] = output_record['C1CN'].zfill(8)
+        # conditional update on dates
+        try:
+            if row['Book Customer Addresses Last Purchase Date']:
+                purchase_date = datetime.datetime.strptime(row['Book Customer Addresses Last Purchase Date'], "%b %d, %Y")
+            else: 
+                purchase_date = customer_info[output_record['C1CN']][1]
+        except KeyError:
+                purchase_date = purchase_limit
+        try:
+            if customer_info[output_record['C1CN']][0]:
+                create_date = customer_info[output_record['C1CN']][0]
+            else:
+                create_date = create_limit
+        except KeyError:
+            create_date = create_limit
+        customer_info[output_record['C1CN']] = [create_date, purchase_date]
+        
+# iterate through the dictionary to determine if records should be deleted       
+for C1CN, customer_dates in sorted(customer_info.items()):
+    create_date = customer_dates[0]
+    purchase_date = customer_dates[1]        
+    if (not purchase_date) or purchase_date < purchase_limit: # 1/1/2019
+        if create_date < create_limit:
+            #print(C1CN, ',', create_date, ',', purchase_date)
+            database_update(C1CN)        
 
 # close database connection
 if connection.is_connected():
@@ -157,9 +191,6 @@ if connection.is_connected():
     print("MySQL connection is closed")            
 
 log_messages = {}
-log_messages['Records Processed']= line_count
-#log_messages['Records Written to output file']= write_count
 log_messages['Record Deletes Requested']= delete_count
-log_messages['Records Skipped'] = skipped_count
 log_json_message(log_messages)
 sys.exit()
