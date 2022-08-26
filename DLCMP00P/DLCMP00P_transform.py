@@ -21,7 +21,7 @@ DLCMP00P_record = DLCMP00P_encoding.keys()
 log_messages={}
 llmigration_table= 'DLCMP00P_Pack'
 input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCMP00P/DLCMP00P.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCMP00P/DLCMP00P_output_test.tsv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCMP00P/DLCMP00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 
 # regex
@@ -31,6 +31,7 @@ numb = regex.compile('\d*')
 line_count = 0
 write_count = 0
 insert_count = 0
+skip_count = 0
 
 def log_json_message(log_message):
     """print out  in json tagged log message format"""
@@ -49,7 +50,7 @@ def loggily_json_message(log_message):
     log_message={}
             
 def database_insert(insert_record):
-    global insert_count
+    global insert_count, skip_record
     placeholders = ', '.join(['%s'] * len(insert_record))
     columns = ', '.join(insert_record.keys())
     # fix for utf-8 keys
@@ -62,6 +63,7 @@ def database_insert(insert_record):
     except mysql.connector.DatabaseError as error:
         log_messages['MySQL_insert'] = str(error)
         log_json_message(log_messages)
+        skip_record = True
         
 def DLCMP00P_validate_fields(record):
     global skip_record
@@ -92,7 +94,7 @@ if connection.is_connected():
     cursor = connection.cursor()
     cursor.execute("select database();")
     record = cursor.fetchone()
-    print("You're connected to database: ", record) 
+    # print("You're connected to database: ", record) 
 
 # open output file
 output_file = open(output_filename, 'w')
@@ -134,18 +136,23 @@ with open(input_filename) as csv_file:
                 loggily_json_message(log_messages)
             else:
                 values = output_record.values()
-                csvwriter.writerow(values)
                 database_insert(output_record)
-                write_count += 1
+                if not skip_record:
+                    csvwriter.writerow(values)
+                    write_count += 1
+        else:
+            skip_count += 1
 
 # close database connection
 if connection.is_connected():
     cursor.close()
     connection.close()
-    print("MySQL connection is closed")            
+    # print("MySQL connection is closed")            
 
-
+log_messages = {}
 log_messages['Records Processed']= line_count
+log_messages['Records Skipped']= skip_count
+
 log_messages['Records Written to output file']= write_count
 log_messages['Records Written to database']= insert_count
 log_json_message(log_messages)

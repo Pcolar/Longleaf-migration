@@ -1,3 +1,5 @@
+### DLCM00P – Customer master file stores customers' names and addresses, as well as many other codes.
+# script 6 - read records from the database and move them to a tsv file
 import json
 import csv
 import datetime, time
@@ -20,7 +22,6 @@ DLCM00P_encoding = {'C1CN': 'ascii','C1REGN': 'utf-8','C1PIDN': 'utf-8','C1PCNM'
 DLCM00P_validator_schema = {'C1CN':{'type':'string','required':True,'maxlength':8},'C1REGN':{'type':'string','empty':True,'maxlength':60},'C1PDN':{'type':'string','empty':True,'maxlength':20},'C1PCNM':{'type':'string','empty':True,'maxlength':60},'C1PAD0':{'type':'string','empty':True,'maxlength':60},'C1PAD1':{'type':'string','empty':True,'maxlength':60},'C1PAD2':{'type':'string','empty':True,'maxlength':60},'C1PAD3':{'type':'string','empty':True,'maxlength':60},'C1PAD4':{'type':'string','empty':True,'maxlength':60},'C1PAD5':{'type':'string','empty':True,'maxlength':60},'C1PAD6':{'type':'string','empty':True,'maxlength':60},'C1PDLVN':{'type':'string','empty':True,'max':999,'min':0},'C1DXNO':{'type':'string','empty':True,'maxlength':10},'C1DXLOC':{'type':'string','empty':True,'maxlength':20},'C1PHN':{'type':'string','empty':True,'maxlength':20},'C1FAX':{'type':'string','empty':True,'maxlength':20},'C1CSTS':{'type':'string','empty':False,'maxlength':1,'allowed':['A','S','C']},'C1CONO':{'type':'string','empty':True,'maxlength':2},'C1BR':{'type':'string','empty':True,'maxlength':2},'C1RGN':{'type':'string','empty':True,'maxlength':2},'C1SLRP':{'type':'string','empty':True,'maxlength':6},'C1CDIS':{'type':'string','empty':True,'maxlength':3},'C1PRCD':{'type':'string','empty':True,'maxlength':2},'C1XINV':{'type':'string','empty':True,'max':999,'min':0},'C1XNVF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CTXC':{'type':'string','empty':True,'maxlength':3},'C1TXNO':{'type':'string','empty':True,'maxlength':15},'C1PYTC':{'type':'string','empty':True,'maxlength':2},'C1ILIC':{'type':'string','empty':True,'maxlength':20},'C1SAN':{'type':'string','empty':True,'maxlength':20},'C1BN':{'type':'string','empty':True,'maxlength':10},'C1CCLS':{'type':'string','empty':True,'maxlength':3},'C1EXCD':{'type':'string','empty':True,'maxlength':1},'C1CRLM':{'type':'string','empty':True},'C1CIAC':{'type':'string','empty':True},'C1CIBR':{'type':'string','empty':True,'maxlength':2},'C1WH':{'type':'string','empty':True,'maxlength':2},'C1CAR':{'type':'string','empty':True,'maxlength':2},'C1FAGC':{'type':'string','empty':True,'maxlength':2},'C1RUN':{'type':'string','empty':True,'maxlength':3},'C1DSTP':{'type':'string','empty':True,'maxlength':3},'C1STTY':{'type':'string','empty':True,'maxlength':1},'C1CMNT':{'type':'string','empty':True,'maxlength':40},'C1OIF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1DLVP':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1DLOP':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CBOA':{'type':'string','empty':True,'maxlength':1},'C1OCON':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1SBI':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1ONRF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CUTO':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1MIF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1FSCF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CIEC':{'type':'string','empty':True,'maxlength':1},'C1INCA':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1DFCF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1AFCG':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CFRT':{'type':'string','empty':True,'maxlength':1},'C1CL1':{'type':'string','empty':True,'maxlength':3},'C1CL2':{'type':'string','empty':True,'maxlength':3},'C1CL3':{'type':'string','empty':True,'maxlength':3},'C1CL4':{'type':'string','empty':True,'maxlength':3},'C1CL5':{'type':'string','empty':True,'maxlength':3},'C1MJS':{'type':'string','empty':True,'maxlength':3},'C1STN':{'type':'string','empty':True,'maxlength':6},'C1BOCR':{'type':'string','empty':True,'maxlength':1},'C1ECR':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1STMT':{'type':'string','empty':True,'maxlength':1},'C1RLSP':{'type':'string','empty':True,'maxlength':6},'C1CTO':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1CASC':{'type':'string','empty':True,'maxlength':20},'C1REGZ':{'type':'string','empty':True,'maxlength':45},'C1REGU':{'type':'string','empty':True,'maxlength':10},'C1CHGZ':{'type':'string','empty':True,'maxlength':45},'C1CHGU':{'type':'string','empty':True,'maxlength':10}}
 DLCM00P_record = DLCM00P_encoding.keys()
 llmigration_table='customer_master'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCM00P/Customer Master - DLCM00P Final.csv'
 output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCM00P/DLCM00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 
@@ -50,23 +51,6 @@ def loggily_json_message(log_message):
         print(response)
     log_message={}
             
-def database_insert(insert_record):
-    placeholders = ', '.join(['%s'] * len(insert_record))
-    columns = ', '.join(insert_record.keys())
-    global insert_count, skip_record
-    # fix for utf-8 keys
-    columns = columns.replace('\ufeff','')
-    try:
-        qry = "INSERT INTO %s ( %s ) VALUES ( %s )" % (llmigration_table, columns, placeholders)
-        cursor.execute(qry, list(insert_record.values()))
-        connection.commit()
-        insert_count += 1
-    except mysql.connector.DatabaseError as error:
-        log_messages = {}
-        log_messages['MySQL_insert'] = str(error)
-        log_json_message(log_messages)
-        skip_record = True
-        
 def DLCM00P_validate_fields(record):
     global skip_record
     # field specific mapping
@@ -136,7 +120,7 @@ except mysql.connector.Error as error:
     exit()
 if connection.is_connected():
     db_Info = connection.get_server_info()
-    cursor = connection.cursor()
+    cursor = connection.cursor(buffered=True)
     cursor.execute("select database();")
     record = cursor.fetchone()
     #print("You're connected to database: ", record) 
@@ -144,155 +128,57 @@ if connection.is_connected():
 # open output file
 output_file = open(output_filename, 'w')
 csvwriter = csv.writer(output_file, delimiter='\t')
-
 log_messages['File created'] = output_filename
 log_json_message(log_messages)
 
-with open(input_filename) as csv_file:
-    cust_master = csv.DictReader(csv_file, delimiter=',')
-    for row in cust_master:
-        line_count += 1
-        # transform output record to field specifications
-        skip_record = False
-        log_messages = {}
-        output_record = {}
-        # initialize output_record keys
-        for x in range(0, len(DLCM00P_Field_format),3):
-            #clean_key = DLCM00P_Field_format[x].replace('\ufeff','')
-            output_record[DLCM00P_Field_format[x]] = ''
-
-        for col in field_map.keys():
-            # fix for utf-8 column names
-            col = col.replace('\ufeff','')
-            # move data to output column
-            output_record[col] = row[field_map[col]]
-            
-        # Field specific mappings
-        # length of C1CN should be 8
-        output_record['C1CN'] = output_record['C1CN'].zfill(8)
-        if row['Name Class Id'] == 'IR' or row['Name Class Id'] == 'IA':
-            skip_record = True
+# retrieve customer Master records from the database
+try:
+    qry = 'Select * from customer_master'
+    cursor.execute(qry)
+    connection.commit()
+    cust_master_rec = cursor.fetchall()
+except mysql.connector.DatabaseError as error:
+    skip_record = True
+    log_messages['MySQL_query'] = str(error)
+    log_json_message(log_messages)   
+for row in cust_master_rec:
+    line_count += 1
+    # transform output record to field specifications
+    skip_record = False
+    log_messages = {}
+    output_record = {}
+    # initialize output_record keys
+    for x in range(0, len(DLCM00P_Field_format),3):
+        #clean_key = DLCM00P_Field_format[x].replace('\ufeff','')
+        output_record[DLCM00P_Field_format[x]] = ''
+    column = 0
+    for col in DLCM00P_record:
+        # move data to output column
+        output_record[col] = row[column]
+        column += 1
+        
+    # Field specific mappings
+    # length of C1CN should be 8
+    output_record['C1CN'] = output_record['C1CN'].zfill(8)
+    #if not skip_record:
+    #    DLCM00P_validate_fields(output_record)
+    # output record    
+    if not skip_record:
+        # validate output record to specification
+        if not v.validate(output_record):
+            log_messages= v.errors
             log_messages['Record ID'] = output_record['C1CN']
-            log_messages['Name Class'] = row['Name Class Id']
-        
-        output_record['C1REGN'] = output_record['C1REGN'][0:34]
-        output_record['C1PAD0'] = output_record['C1PAD0'][0:34]
-        output_record['C1PAD0'] = output_record['C1PAD0'][0:34]
-        output_record['C1PAD1'] = output_record['C1PAD1'][0:34]
-        output_record['C1PAD2'] = output_record['C1PAD2'][0:34]
-        output_record['C1PAD3'] = output_record['C1PAD3'][0:34]
-        output_record['C1PAD4'] = output_record['C1PAD4'][0:19]
-        output_record['C1PAD5'] = output_record['C1PAD5'][0:19]
-        output_record['C1PAD6'] = output_record['C1PAD6'][0:34]
-        output_record['C1PDLVN'] = '000'
-        output_record['C1PHN'] = (row['Telephone Area'] + ' ' + row['Telephone Number']).strip()
-        output_record['C1FAX'] = (row['Fax Area'] + ' ' + row['Fax Number']).strip()
-        # hold for C1BR - when defined
-        if not row['POSTAL ADDRESS 6'] == 'US':
-            output_record['C1RGN'] = 'EX'
-        else:
-            output_record['C1RGN'] = ''
-        output_record['C1SLRP'] = ''
-        try:
-            output_record['C1CDIS'] = C1CDIS_map[output_record['C1CDIS']]
-        except KeyError:
-            log_messages['C1CDIS'] = 'mapping failed for ' + output_record['C1CDIS']
-            output_record['C1CDIS'] = ''
-        output_record['C1PRCD'] = '00'
-        if int(output_record['C1XINV']) > 0:
-            output_record['C1XINV'] = str(int(output_record['C1XINV'])-1)
-        else:
-            output_record['C1XINV'] = '0'
-        output_record['C1XNVF'] = 'N'
-        
-        if not output_record['C1CCLS']:
-            output_record['C1CCLS'] = 'GEN'
-        output_record['C1CIAC'] = '0'
-        output_record['C1IBR'] = '10'
-        output_record['C1WH'] = '21'
-        output_record['C1ONRF'] = 'Y'
-        output_record['C1CUTO'] = 'N'
-        output_record['C1BOCR'] = '1'
-        output_record['C1INCA'] = 'N'
-        output_record['C1DFCF'] = 'N'
-        output_record['C1CFRT'] = 'N'
-        try:
-            output_record['C1MJS'] = C1MJS_acct_map[row['ACCOUNT NUMBER']]
-        except KeyError:
-            if not output_record['C1MJS']:
-                if row['Name Class Id'] == 'RI' or row['Name Class Id'] == 'RU':
-                    output_record['C1MJS'] = 'RIN'
-                else:
-                    if (row['Name Class Id'] =='AM' or row['Name Class Id'] == 'AD') and row['ACCOUNT NUMBER'] == '104423':
-                        output_record['C1MJS'] = 'AMZ'
-                    else:
-                        if row['Name Class Id'] =='BM' and row['ACCOUNT NUMBER'] == '197941':
-                            output_record['C1MJS'] = 'BNT'
-                        else:
-                            if row['Name Class Id'] =='BI' and row['ACCOUNT NUMBER'] == '109543':
-                                output_record['C1MJS'] = 'BNI'
-        # map C1CSTS
-        if output_record['C1CSTS'] == '' or output_record['C1CSTS'] == 'Y':
-            output_record['C1CSTS'] = 'A'
-        else:
-            if output_record['C1CSTS'] == 'N':
-                output_record['C1CSTS'] = 'S'
-        # map C1BN
-        # if not mapped, set default value
-        if (not row['Default Order Bill To ID']) or row['Default Order Bill To ID'] == '0':
-            if row['ACCOUNT NUMBER']:
-                output_record['C1BN'] = row['ACCOUNT NUMBER']
-            else:
-                output_record['C1BN'] = '111170'
-
-        # map C1CBOA
-        if not output_record['C1CBOA']:
-            output_record['C1CBOA'] = 'A'
-        else:
-            try:
-                output_record['C1CBOA'] = C1CBOA_map[output_record['C1CBOA']]
-            except KeyError:
-                log_messages['Record ID'] = output_record['C1CN']
-                log_messages['C1CBOA map failure'] = output_record['C1CBOA']
-                log_json_message(log_messages)
-                output_record['C1CBOA'] = 'A'
-        # Set Default
-        output_record['C1SBI'] = 'N'
-        output_record['C1ONRF'] = 'N'
-        output_record['C1CONO'] = '00'
-        output_record['C1PYTC'] = ''
-        output_record['C1EXCD'] = 'U'
-        output_record['C1STTY'] = ''
-        output_record['C1OIF'] = 'Y'
-        # Registration and Change Timestamps and users
-        output_record['C1REGZ'] = row['Create Date']
-        output_record['C1CHGZ'] = row['Last Changed Date']
-        if output_record['C1REGZ']:
-            output_record['C1REGZ'] =  datetime.datetime.strptime(output_record['C1REGZ'], "%b %d, %Y").strftime("%Y-%m-%dT%H:%M:%SZ")
-        if output_record['C1CHGZ']:
-            output_record['C1CHGZ'] =  datetime.datetime.strptime(output_record['C1CHGZ'], "%b %d, %Y").strftime("%Y-%m-%dT%H:%M:%SZ")
-        output_record['C1CHGU'] = output_record['C1CHGU'][0:9]
-        output_record['C1REGU'] = output_record['C1REGU'][0:9]
-        if not skip_record:
-            DLCM00P_validate_fields(output_record)
-        # output record    
-        if not skip_record:
-            # validate output record to specification
-            if not v.validate(output_record):
-                log_messages= v.errors
-                log_messages['Record ID'] = output_record['C1CN']
-                log_messages['Status'] = 'record skipped'           
-                log_json_message(log_messages)
-                skipped_count += 1
-                #loggily_json_message(log_messages)
-            else:
-                values = output_record.values()
-                database_insert(output_record)
-                if not skip_record:
-                    csvwriter.writerow(values)        
-                    write_count += 1
-        else:
+            log_messages['Status'] = 'record skipped'           
+            log_json_message(log_messages)
             skipped_count += 1
+            #loggily_json_message(log_messages)
+        else:
+            values = output_record.values()
+            if not skip_record:
+                csvwriter.writerow(values)        
+                write_count += 1
+    else:
+        skipped_count += 1
 
 # close database connection
 if connection.is_connected():
@@ -305,7 +191,6 @@ output_file.close()
 log_messages = {}
 log_messages['Records Processed']= line_count
 log_messages['Records Written to output file']= write_count
-log_messages['Records Written to database']= insert_count
 log_messages['Records Skipped'] = skipped_count
 log_json_message(log_messages)
 sys.exit()

@@ -1,6 +1,8 @@
+### DLIC00P - Item Classification File
+
 import json
 import csv
-import datetime, time
+import datetime
 import os, sys
 import requests
 import regex, re
@@ -25,7 +27,7 @@ input_filename = [
     '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIC00P/DLIC00P-1.csv',
     '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIC00P/DLIC00P-2.csv',
     '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIC00P/DLIC00P-3.csv']
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIC00P/DLIC00P-220810.tsv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIC00P/DLIC00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 item_dict = {}
 class_aggregator = {}
@@ -34,6 +36,7 @@ class_aggregator = {}
 alpha = regex.compile('\w*')
 numb = regex.compile('\d*')
 redact_char = re.compile('[\r\n\t]*')
+redact_punct = re.compile(' -.')
 # counters
 line_count = 0
 write_count = 0
@@ -68,9 +71,11 @@ def database_insert(insert_record):
         connection.commit()
         insert_count += 1
     except mysql.connector.DatabaseError as error:
-        log_messages['MySQL_insert'] = str(error)
-        log_messages['Record ID'] = insert_record['I5I']
-        log_json_message(log_messages)
+        if not 'Duplicate' in str(error):
+            log_messages = {}
+            log_messages['MySQL_insert'] = str(error)
+            log_messages['Record ID'] = insert_record['I5I']
+            log_json_message(log_messages)
         skip_record = True
         
 def DLIC00P_validate_fields(record):
@@ -178,19 +183,25 @@ for input_file_num in range(0,2):
                     if row[field_map[col]]:
                         process_record[col] = row[field_map[col]]
                 except KeyError: pass
+            
+            # for file 1 - exclude Rutgers (02) and Truman State (12)
+            if input_file_num == 0:
+                if int(row['Company No']) == 2 or int(row['Company No']) == 12:
+                    skip_record = True
                
             # create/retrieve & update the dict entry
-            try:
-                # retrieve and update the data structure
-                item_record = list(item_dict[process_record['Product_ID']])
-                for x in range(0, len(class_aggregator_map)):
-                    if (not item_record[x]) and process_record[class_aggregator_map[x]]:
-                        item_record[x] = process_record[class_aggregator_map[x]]
-            except KeyError:
-                # dict entry does not exist, so create
-                item_record = process_record.values()
+            if not skip_record:
+                try:
+                    # retrieve and update the data structure
+                    item_record = list(item_dict[process_record['Product_ID']])
+                    for x in range(0, len(class_aggregator_map)):
+                        if (not item_record[x]) and process_record[class_aggregator_map[x]]:
+                            item_record[x] = process_record[class_aggregator_map[x]]
+                except KeyError:
+                    # dict entry does not exist, so create
+                    item_record = process_record.values()
             
-            item_dict[process_record['Product_ID']] = item_record
+                item_dict[process_record['Product_ID']] = item_record
     print('Processing complete for ', input_file)
 
 
@@ -258,7 +269,9 @@ with open(input_file) as csv_file:
 # process all entries in the aggregator DICT
 for item_record in item_dict.items():
     # move content to output record
-    output_record['I5I'] = item_record[ISBN13]
+    output_record['I5I'] = item_record[1][ISBN13]
+    if not output_record['I5I']:
+        skip_record = True
     # set uniform effective date
     output_record['I5EFDT'] = '2022-08-01'
     output_record['I5ICE'] = ''
@@ -266,51 +279,51 @@ for item_record in item_dict.items():
     # IC-SER
     try:
         output_record['I5ICT'] = 'IC-SER'
-        output_record['I5ICC'] = ic_ser_map[item_record[Series_ID]]
+        output_record['I5ICC'] = ic_ser_map[item_record[1][Series_ID]]
         write_output(output_record)
     except KeyError:
-        log_messages['IC-SER map not found'] = item_record[Series_ID]
+        log_messages['IC-SER map not found'] = item_record[1][Series_ID]
     # IC-SUBM
     try:
         output_record['I5ICT'] = 'IC-SUBM'
-        output_record['I5ICC'] = ic_subm_map[item_record[Minor_Disc_ID]]
+        output_record['I5ICC'] = ic_subm_map[item_record[1][Minor_Disc_ID]]
         write_output(output_record)
     except KeyError:
-        log_messages['IC-SUBM map not found'] = item_record[Minor_Disc_ID]
+        log_messages['IC-SUBM map not found'] = item_record[1][Minor_Disc_ID]
     # IC-INT
     try:
         output_record['I5ICT'] = 'IC-INT'
-        output_record['I5ICC'] = ic_int_map[item_record[Interest_Code]]
+        output_record['I5ICC'] = ic_int_map[item_record[1][Interest_Code]]
         write_output(output_record)
     except KeyError:
-        log_messages['IC-INT map not found'] = item_record[Interest_Code]
+        log_messages['IC-INT map not found'] = item_record[1][Interest_Code]
     # IC-SEAS  
     output_record['I5ICT'] = 'IC-SEAS'
-    output_record['I5ICC'] = item_record[Season]
+    output_record['I5ICC'] = item_record[1][Season]
     write_output(output_record)
     # IC-SUBJ
     output_record['I5ICT'] = 'IC-SUBJ'
-    output_record['I5ICC'] = item_record[BISAC1][:-1]
+    output_record['I5ICC'] = item_record[1][BISAC1][:-1]
     write_output(output_record)
     output_record['I5ICT'] = 'IC-SUBJ'
-    output_record['I5ICC'] = item_record[BISAC2][:-1]
+    output_record['I5ICC'] = item_record[1][BISAC2][:-1]
     write_output(output_record)
     output_record['I5ICT'] = 'IC-SUBJ'
-    output_record['I5ICC'] = item_record[BISAC3][:-1]
+    output_record['I5ICC'] = item_record[1][BISAC3][:-1]
     write_output(output_record)
     # IC-ROY
-    # retrieve the corresponding item master
+    # retrieve the corresponding item record
     try:
-        qry = 'Select I1CLS, I1BRNC from item_master where I1I = %s'
-        cursor.execute(qry, output_record['I5I'])
+        qry = 'Select Royalties_Flag from informer_DLIM00P where I1I = %s or I1AI = %s'
+        cursor.execute(qry, output_record['I5I'], output_record['I5I'])
         connection.commit()
         item_master_rec = cursor.fetchall()
-        if item_master_rec[0] == '013' or (item_master_rec[0] == '009' and item_master_rec[1] == 'DI'):
-            output_record['I5ICC'] = 'N'
-        else:
+        if item_master_rec[0] == 'Y':
             output_record['I5ICC'] = ''
+        else:
+            output_record['I5ICC'] = 'N'
     except mysql.connector.DatabaseError as error:
-        output_record['I5ICC'] = ''
+        output_record['I5ICC'] = 'N'
         log_messages['MySQL_query'] = str(error)
         log_messages['IC-ROY item_master not found'] = output_record['I5I']    
     output_record['I5ICT'] = 'IC-ROY'
@@ -324,7 +337,6 @@ if connection.is_connected():
     print("MySQL connection is closed")            
 
 log_messages = {}
-log_messages['Records Processed']= line_count
 log_messages['Records Written to output file']= write_count
 log_messages['Records Written to database']= insert_count
 log_messages['Records Skipped'] = skipped_count

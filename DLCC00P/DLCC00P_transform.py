@@ -1,3 +1,8 @@
+### DLCC00P - Customer classification. 
+# Contains information about user defined classification per customer. 
+# Defines different customer classification categories such as major accounts, buying groups, specialty groups, outlet types, etc. 
+# Multiple codes can then be defined for each applicable customer classification group with effective dates.
+
 import json
 import csv
 import datetime, time
@@ -20,8 +25,8 @@ DLCC00P_encoding = {'C5CN': 'ascii','C5CTYP': 'ascii','C5EFDT': 'ascii','C5CODE'
 DLCC00P_validator_schema = {'C5CN':{'type':'string','required':True,'maxlength':10},'C5CTYP':{'type':'string','required':True,'maxlength':8},'C5EFDT':{'type':'string','required':True,'maxlength':10},'C5CODE':{'type':'string','required':True,'maxlength':3}}
 DLCC00P_record = DLCC00P_encoding.keys()
 llmigration_table='customer_classification'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCC00P/Customer Master - DLCM00P 220731.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCC00P/DLCC00P-220804.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCC00P/Customer Master - DLCM00P Final.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCC00P/DLCC00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 
 # regex
@@ -31,6 +36,7 @@ numb = regex.compile('\d*')
 line_count = 0
 write_count = 0
 insert_count = 0
+skip_count = 0
 
 def log_json_message(log_message):
     """print out  in json tagged log message format"""
@@ -63,11 +69,26 @@ def database_insert(insert_record):
         log_messages['MySQL_insert'] = str(error)
         log_json_message(log_messages)
         
-def DLCC00P_validate_fields(record, skip_record):
+# Verify a customer master record exists in the database
+def check_customer_master(item_key):
+    import mysql.connector
+    global cursor, skip_record
+    item_list = [item_key]
+    try:
+        qry = 'Select C1CN from customer_master where C1CN = %s'
+        cursor.execute(qry, item_list)
+        connection.commit()
+        cust_master_rec = cursor.fetchall()
+    except mysql.connector.DatabaseError as error:
+        skip_record = True
+        # skip error reporting if record not found in Customer Master
+        log_messages['MySQL_query'] = str(error)
+        log_messages['customer_master not found'] = item_key
+        log_json_message(log_messages)    
+                
+def DLCC00P_validate_fields(record):
+    global skip_record
     # field specific mapping
-    # length of C5CN should be 8
-    while len(record['C5CN']) < 8:
-        record['C5CN'] = '{:0>8}'.format(record['C5CN'])
     log_messages['C5CN'] = record['C5CN']
     
     # field specifics            
@@ -75,7 +96,6 @@ def DLCC00P_validate_fields(record, skip_record):
     for field_index in range(0, len(DLCC00P_field_format),3):
         field_type = field_index + 1
         field_length = field_index + 2
-        # print(f' index:', field_index, 'key:', DLCC00P_field_format[field_index], 'Type: ', DLCC00P_field_format[field_type], 'Length: ', DLCC00P_field_format[field_length])
         if record[DLCC00P_field_format[field_index]]:
             log_messages['field'] = DLCC00P_field_format[field_index]
             if  len(record[DLCC00P_field_format[field_index]]) >  int(DLCC00P_field_format[field_length]):
@@ -111,10 +131,10 @@ except mysql.connector.Error as error:
     exit()
 if connection.is_connected():
     db_Info = connection.get_server_info()
-    cursor = connection.cursor()
+    cursor = connection.cursor(buffered=True)
     cursor.execute("select database();")
     record = cursor.fetchone()
-    print("You're connected to database: ", record) 
+    #print("You're connected to database: ", record) 
 
 # open output file
 output_file = open(output_filename, 'w')
@@ -141,7 +161,8 @@ with open(input_filename) as csv_file:
             col = col.replace('','')
             # move data to output column
             output_record[col] = row[field_map[col]]
-            
+        # length of C5CN should be 8
+        output_record['C5CN'] = output_record['C5CN'].zfill(8)   
         #map Name Class to Type and Code
         # create CC-TOB record
         try:
@@ -152,7 +173,10 @@ with open(input_filename) as csv_file:
             output_record['C5CODE'] = 'TOB'
         
         output_record['C5EFDT'] = '0001-01-01'
-        DLCC00P_validate_fields(output_record, skip_record)            
+        if not skip_record:
+            check_customer_master(output_record['C5CN'])
+        if not skip_record:
+            DLCC00P_validate_fields(output_record)            
         if not skip_record:
             # validate output record to specification
             if not v.validate(output_record):
@@ -163,9 +187,12 @@ with open(input_filename) as csv_file:
                 loggily_json_message(log_messages)
             else:
                 values = output_record.values()
-                csvwriter.writerow(values)
                 database_insert(output_record)
-                write_count += 1
+                if not skip_record:
+                    csvwriter.writerow(values)
+                    write_count += 1
+        else:
+            skip_count += 1
                 
         # create CC-LEG record 
         log_messages = {}
@@ -178,7 +205,10 @@ with open(input_filename) as csv_file:
             output_record['C5CODE'] = 'ZZZ'
         
         output_record['C5EFDT'] = '0001-01-01'
-        DLCC00P_validate_fields(output_record, skip_record)            
+        if not skip_record:
+            check_customer_master(output_record['C5CN'])
+        if not skip_record:
+            DLCC00P_validate_fields(output_record)   
         if not skip_record:
             # validate output record to specification
             if not v.validate(output_record):
@@ -189,18 +219,22 @@ with open(input_filename) as csv_file:
                 loggily_json_message(log_messages)
             else:
                 values = output_record.values()
-                csvwriter.writerow(values)
                 database_insert(output_record)
-                write_count += 1        
+                if not skip_record:
+                    csvwriter.writerow(values)
+                    write_count += 1  
+        else:
+            skip_count += 1     
 
 # close database connection
 if connection.is_connected():
     cursor.close()
     connection.close()
-    print("MySQL connection is closed")            
+    #print("MySQL connection is closed")            
 
-
+log_messages = {}
 log_messages['Records Processed']= line_count
+log_messages['Records skipped'] = skip_count
 log_messages['Records Written to output file']= write_count
 log_messages['Records Written to database']= insert_count
 log_json_message(log_messages)

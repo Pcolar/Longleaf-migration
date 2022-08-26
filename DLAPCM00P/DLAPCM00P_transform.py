@@ -1,6 +1,8 @@
+
+### DLAPCM00P- A/P creditors master file.
 import json
 import csv
-import datetime, time
+import datetime
 import os, sys
 import requests
 import regex
@@ -21,7 +23,7 @@ DLAPCM00P_validator_schema = {'A1CN':{'type': 'string','maxlength': 10,'required
 DLAPCM00P_record = DLAPCM00P_encoding.keys()
 llmigration_table='vendor_master'
 input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLAPCM00P/AP Vendors - DLAPCM00P-220630.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLAPCM00P/DLAPCM00P-output.tsv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLAPCM00P/DLAPCM00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 
 # regex
@@ -172,7 +174,8 @@ except mysql.connector.Error as error:
     exit()
 if connection.is_connected():
     db_Info = connection.get_server_info()
-    cursor = connection.cursor()
+    # cursor = connection.cursor()
+    cursor = connection.cursor(buffered=True)
     cursor.execute("select database();")
     record = cursor.fetchone()
     print("You're connected to database: ", record) 

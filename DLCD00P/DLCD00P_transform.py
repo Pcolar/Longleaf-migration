@@ -1,11 +1,27 @@
+### DLCD00P - Delivery Address file
+### Note: input file requires pre-processing via EXCEL
+### input file prep
+### Sort by
+###     Customer ID Asc
+###     Address type Desc
+###     Address Line 1
+###     Address Line 2	
+###     Address Line 3	
+###     City	
+###     Zip Code
+###     Address Id ASC
+###
+### 	Data -> Tables -> remove duplicates
+### 		Columns A, E, G, H, J, M
+###     format numeric fields as 'number, zero decimal places'
+###     By default, a number over 12 digits in an Excel spreadsheet is auto-formatted to scientific notation.
+
 import json
 import csv
-import datetime, time
-import string
 import os, sys
-from turtle import clear
+import datetime
 import requests
-import regex
+import regex, re
 from cerberus import Validator
 import phonenumbers
 import mysql.connector
@@ -23,13 +39,14 @@ DLCD00P_record = DLCD00P_encoding.keys()
 
 log_messages={}
 llmigration_table= 'delivery_address'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P-dedup-220729.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P-220729.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P-dedup.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCD00P/DLCD00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 
 # regex
 alpha = regex.compile('\w*')
 numb = regex.compile('\d*')
+pattern = regex.compile(['\n','\u00017','\ufeff'])
 # counters
 line_count = 0
 write_count = 0
@@ -54,7 +71,7 @@ def loggily_json_message(log_message):
     log_message={}
             
 def database_insert(insert_record):
-    global insert_count
+    global insert_count, skip_record
     placeholders = ', '.join(['%s'] * len(insert_record))
     columns = ', '.join(insert_record.keys())
     # fix for utf-8 keys
@@ -67,6 +84,23 @@ def database_insert(insert_record):
     except mysql.connector.DatabaseError as error:
         log_messages['MySQL_insert'] = str(error)
         log_json_message(log_messages)
+        skip_record = True
+        
+# Verify an customer master record exists in the database
+def check_customer_master(item_key):
+    import mysql.connector
+    global cursor, skip_record
+    
+    try:
+        qry = 'Select C1CN from customer_master where C1CN = %s'
+        cursor.execute(qry, item_key)
+        connection.commit()
+        cust_master_rec = cursor.fetchall()
+    except mysql.connector.DatabaseError as error:
+        skip_record = True
+        log_messages['MySQL_query'] = str(error)
+        log_messages['customer_master record not found'] = item_key
+        log_json_message(log_messages)    
         
 def DLCD00P_validate_fields(record, address_seq, skip_record):
     # field specific mapping
@@ -154,6 +188,8 @@ with open(input_filename) as csv_file:
             for col in field_map.keys():
                 # move data to output column
                 output_record[col] = row[field_map[col]]
+                # normalize content
+                output_record[col] = re.sub(pattern,'',output_record[col])                
                 
             # merge Phone and Fax area + number fields
             output_record['C4DPHN'] = row['Telephone Area'] + ' ' + row['Telephone Number']
@@ -184,6 +220,9 @@ with open(input_filename) as csv_file:
             #check all fields
             DLCD00P_validate_fields(output_record, address_seq, skip_record)
             
+            # verify a corresponding customer master record exists
+            check_customer_master(output_record['C4CN'])
+            
             # flag address seq GT 100 and skip record
             if address_seq > 100:
                 skip_record = True
@@ -200,10 +239,11 @@ with open(input_filename) as csv_file:
                 log_json_message(log_messages)
             else:
                 values = output_record.values()
-                csvwriter.writerow(values)
                 database_insert(output_record)
                 previous_C4CN = output_record['C4CN']
-                write_count += 1
+                if not skip_record:
+                    csvwriter.writerow(values)
+                    write_count += 1
 
 # close database connection
 if connection.is_connected():

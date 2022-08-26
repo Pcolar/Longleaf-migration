@@ -1,10 +1,10 @@
+### DLIMB00P – Title detail information. Includes stock status, pub dates, etc.
+###
 from fileinput import close
 import json
 import csv
-import datetime, time
-import string
+import datetime
 import os, sys
-from turtle import clear
 import requests
 import regex
 from cerberus import Validator
@@ -16,7 +16,7 @@ from secrets import *
 from DLIMB00P_map import *
 from DLIMB00P_format import *
 # include group mapping from item file
-from DLIM00P_group_map import *
+from DLIM00P_maps import *
 
 # Globals
 DLIMB00P_encoding = {'BJI':'ascii','BJICG':'ascii','BJSTKSTS':'ascii','BJRLSD':'ascii','BJCSED':'ascii','BJFSIF':'ascii','BJLNKI':'ascii','BJPR1I':'ascii','BJPR2I':'ascii','BJPR3I':'ascii'}
@@ -25,8 +25,8 @@ DLIMB00P_record = DLIMB00P_encoding.keys()
 
 log_messages={}
 llmigration_table= 'title_file'
-input_filename =  '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIMB00P/DLIM00P-220731.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIMB00P/DLIMB00P-220803.tsv'
+input_filename =  '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIMB00P/DLIM00P.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIMB00P/DLIMB00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 
 # regex
@@ -36,6 +36,7 @@ numb = regex.compile('\d*')
 line_count = 0
 write_count = 0
 insert_count = 0
+skip_count = 0
 # date comparisons
 date_limit = datetime.datetime(2017,1,1)
 
@@ -87,13 +88,14 @@ def DLIMB00P_validate_fields(record):
     # normalize dates
     if record['BJRLSD']:
         record['BJRLSD'] =  datetime.datetime.strptime(record['BJRLSD'], "%b %d, %Y").strftime("%Y-%m-%d")
-    if record['BJCSED']:
-        record['BJCSED'] =  datetime.datetime.strptime(record['BJCSED'], "%b %d, %Y").strftime("%Y-%m-%d")
-        if record['BJCSED'] < record['BJRLSD']:
-            log_messages['Cease Date is less than Release Date'] = str(record['BJCSED']) + ':' + str(record['BJRLSD'])
-            log_messages['Record ID'] = record['BJI']
-            log_json_message(log_messages)
-            record['BJCSED'] = '9999-12-31'
+    # if record['BJCSED']:
+    #    record['BJCSED'] =  datetime.datetime.strptime(record['BJCSED'], "%b %d, %Y").strftime("%Y-%m-%d")
+    #    if record['BJCSED'] < record['BJRLSD']:
+    #        log_messages['Cease Date is less than Release Date'] = str(record['BJCSED']) + ':' + str(record['BJRLSD'])
+    #        log_messages['Record ID'] = record['BJI']
+    #        log_json_message(log_messages)
+    #        record['BJCSED'] = '9999-12-31'
+    record['BJCSED'] = '9999-12-31'
         
 
 ### MAIN ###  
@@ -114,10 +116,11 @@ except mysql.connector.Error as error:
     exit()
 if connection.is_connected():
     db_Info = connection.get_server_info()
-    cursor = connection.cursor()
+    cursor = connection.cursor(buffered=True)
+    #cursor = connection.cursor()
     cursor.execute("select database();")
     record = cursor.fetchone()
-    print("You're connected to database: ", record) 
+    # print("You're connected to database: ", record) 
 
 # open output file
 output_file = open(output_filename, 'w')
@@ -181,16 +184,17 @@ for row in input_rec:
     if not skip_record:
         DLIMB00P_validate_fields(output_record)
     # verify an item master record exists
+    item_list = [output_record['BJI']]
     if not skip_record:
          # retrieve the corresponding item master
         try:
             qry = 'Select I1I from item_master where I1I = %s'
-            cursor.execute(qry, output_record['I1I'])
+            cursor.execute(qry, item_list)
             connection.commit()
             item_master_rec = cursor.fetchall()
         except mysql.connector.DatabaseError as error:
             log_messages['MySQL_query'] = str(error)
-            log_messages['item_master not found'] = output_record['I1I']
+            log_messages['item_master not found'] = output_record['BJI']
             skip_record = True       
     if not skip_record:
         # validate output record to specification
@@ -206,6 +210,9 @@ for row in input_rec:
             if not skip_record:
                 csvwriter.writerow(values)
                 write_count += 1
+    else:
+            skip_count += 1
+
 # close csv file
 input_file.close()
 
@@ -213,11 +220,12 @@ input_file.close()
 if connection.is_connected():
     cursor.close()
     connection.close()
-    print("MySQL connection is closed")            
+    # print("MySQL connection is closed")            
 
-
+log_messages = {}
 log_messages['Records Processed']= line_count
 log_messages['Records Written to output file']= write_count
 log_messages['Records Written to database']= insert_count
+log_messages['Records skipped'] = skip_count
 log_json_message(log_messages)
 sys.exit()            

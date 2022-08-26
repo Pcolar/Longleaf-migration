@@ -1,7 +1,13 @@
+### 
+### DLPRC00P - Price file contains title's pricing details, with the facility to store multiple prices per title.
+### https://uncbi.navigahub.com/datasets/UNCJSLAJUS:dlprc00p-prices
+### Sort by
+###  ISBN13 - Asc
+###  History Date - Desc
+
 import json
 import csv
-import datetime, time
-import string
+import datetime
 import os, sys
 import requests
 import regex
@@ -20,8 +26,8 @@ DLPRC00P_record = DLPRC00P_encoding.keys()
 
 log_messages={}
 llmigration_table= 'price_file'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-220729.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-220729.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 previous_day = datetime.timedelta(1)
 
@@ -32,6 +38,7 @@ numb = regex.compile('\d*')
 line_count = 0
 write_count = 0
 insert_count = 0
+skip_count = 0
 
 def log_json_message(log_message):
     """print out  in json tagged log message format"""
@@ -158,7 +165,7 @@ if connection.is_connected():
     cursor = connection.cursor()
     cursor.execute("select database();")
     record = cursor.fetchone()
-    print("You're connected to database: ", record) 
+    # print("You're connected to database: ", record) 
 
 # open output file
 output_file = open(output_filename, 'w')
@@ -217,13 +224,17 @@ with open(input_filename) as csv_file:
                 if not skip_record:
                     csvwriter.writerow(values)
                     write_count += 1
+        else:
+            skip_count += 1
 # close database connection
 if connection.is_connected():
     cursor.close()
     connection.close()
-    print("MySQL connection is closed")            
+    # print("MySQL connection is closed")            
 
+log_messages = {}
 log_messages['Records Processed']= line_count
+log_messages['Records Skipped']= skip_count
 log_messages['Records Written to output file']= write_count
 log_messages['Records Written to database']= insert_count
 log_json_message(log_messages)

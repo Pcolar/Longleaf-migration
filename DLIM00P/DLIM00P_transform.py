@@ -1,11 +1,10 @@
 import json
 import csv
-import datetime, time
-import os, sys
+import datetime
+import sys
 import requests
 import regex, re
 from cerberus import Validator
-# import phonenumbers
 import mysql.connector
 
 # hidden parameters
@@ -13,13 +12,11 @@ from secrets import *
 # field mapper and formats
 from DLIM00P_master_map import *
 from DLIM00P_maps import *
-from DLIM00P_group_map import *
 from DLIM00P_I1DIV_map import *
 from DLIM00P_I1IDIS_map import *
 from DLIM00P_I1PACK_map import *
 from DLIM00P_I1ISTS_map import *
 from DLIM00P_format import *
-from DLIM00P_MINOR_DISC import *
 
 # Globals
 log_messages={}
@@ -27,8 +24,8 @@ DLIM00P_encoding ={'I1CLS':'ascii','I1DIV':'ascii','I1GRP':'ascii','I1CAT':'asci
 DLIM00P_validator_schema = {'I1CLS':{'type':'string','maxlength':3,'empty':True},'I1DIV':{'type':'string','maxlength':3,'empty':False},'I1GRP':{'type':'string','maxlength':3,'empty':False},'I1CAT':{'type':'string','maxlength':3,'empty':True},'I1SCT':{'type':'string','maxlength':3,'empty':True},'I1I':{'type':'string','maxlength':20,'required':True},'I1AI':{'type':'string','maxlength':20,'empty':True},'I1SUPI':{'type':'string','maxlength':20,'empty':True},'I1IDSC':{'type':'string','maxlength':60,'empty':True},'I1IEDC':{'type':'string','maxlength':60,'empty':True},'I1CMNT':{'type':'string','maxlength':40,'empty':True},'I1STKR':{'type':'string','maxlength':10,'empty':True},'I1BRNC':{'type':'string','maxlength':3,'empty':True},'I1PRFC':{'type':'string','maxlength':3,'empty':True},'I1IDIS':{'type':'string','maxlength':3,'empty':True},'I1EFEX':{'type':'string','maxlength':1,'empty':True},'I1ORGN':{'type':'string','maxlength':4,'empty':True},'I1UOM':{'type':'string','maxlength':3,'empty':True},'I1PPER':{'type':'string','maxlength':7,'empty':True},'I1CPER':{'type':'string','maxlength':7,'empty':True},'I1PKG':{'type':'string','maxlength':5,'empty':True},'I1RLSN':{'type':'string','maxlength':4,'empty':True},'I1OSRD':{'type':'string','maxlength':10,'empty':True},'I1CSMC':{'type':'string','maxlength':4,'empty':True},'I1PACK':{'type':'string','maxlength':1,'empty':True},'I1ABC':{'type':'string','maxlength':1,'empty':True},'I1STKF':{'type':'string','maxlength':1,'empty':True},'I1ILCC':{'type':'string','maxlength':3,'empty':True},'I1PTWC':{'type':'string','maxlength':3,'empty':True},'I1LPF':{'type':'string','maxlength':1,'empty':True},'I1CFBF':{'type':'string','maxlength':1,'empty':True},'I1FRCHG':{'type':'string','maxlength':1,'empty':True},'I1ISTS':{'type':'string','maxlength':1,'empty':True},'I1BMTH':{'type':'string','maxlength':3,'empty':True},'I1EFCS':{'type':'string','maxlength':15,'empty':True},'I1EDDS':{'type':'string','maxlength':5,'empty':True},'I1OSPR':{'type':'string','maxlength':13,'empty':True},'I1DTYR':{'type':'string','maxlength':5,'empty':True},'I1TRFC':{'type':'string','maxlength':20,'empty':True},'I1IGLC':{'type':'string','maxlength':10,'empty':True},'I1CRTQ':{'type':'string','maxlength':5,'empty':True},'I1VOL':{'type':'string','maxlength':9,'empty':True},'I1VLWT':{'type':'string','maxlength':9,'empty':True},'I1WGHN':{'type':'string','maxlength':9,'empty':True},'I1WGHT':{'type':'string','maxlength':9,'empty':True},'I1LNG':{'type':'string','maxlength':7,'empty':True},'I1WDTH':{'type':'string','maxlength':7,'empty':True},'I1DPTH':{'type':'string','maxlength':7,'empty':True},'I1EXTV':{'type':'string','maxlength':9,'empty':True},'I1EXTM':{'type':'string','maxlength':2,'empty':True},'I1IBCD':{'type':'string','maxlength':20,'empty':True},'I1IWSC':{'type':'string','maxlength':3,'empty':True},'I1REGD':{'type':'string','maxlength':45,'empty':True},'I1REGU':{'type':'string','maxlength':10,'empty':True},'I1CHGZ':{'type':'string','maxlength':45,'empty':True},'I1CHGU':{'type':'string','maxlength':10,'empty':True},'I1LANG':{'type':'string','maxlength':3,'empty':True},'I1EDTT':{'type':'string','maxlength':3,'empty':True},'I1TXC1':{'type':'string','maxlength':3,'empty':True},'I1TXP1':{'type':'string','maxlength':6,'empty':True},'I1TXC2':{'type':'string','maxlength':3,'empty':True},'I1TXP2':{'type':'string','maxlength':6,'empty':True},'I1TXC3':{'type':'string','maxlength':3,'empty':True},'I1TXP3':{'type':'string','maxlength':6,'empty':True},'I1TXC4':{'type':'string','maxlength':3,'empty':True},'I1TXP4':{'type':'string','maxlength':6,'empty':True},'I1TXC5':{'type':'string','maxlength':3,'empty':True},'I1TXP5':{'type':'string','maxlength':6,'empty':True}}
 DLIM00P_record = DLIM00P_encoding.keys()
 llmigration_table='item_master'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-220807.csv'
-output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-220808.tsv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P.csv'
+output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLIM00P/DLIM00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 pub_status_code = ''
 last_sold_date = ''
@@ -87,12 +84,9 @@ def DLIM00P_validate_fields(record):
     global skip_record, item_group
     # field specific mapping
     # length of I1CLS should be 3
-    if len(record['I1CLS']) < 3:
-        record['I1CLS'] = '{:0>3}'.format(record['I1CLS'])
-    else:
-        if len(record['I1CLS']) > 3:
-            log_messages['I1CLS'] = record['I1CLS']
-            log_messages['Record ID'] = record['I1I']
+    record['I1CLS'] = record['I1CLS'].zfill(3)
+    if record['I1CLS'] == '000':
+        record['I1CLS'] = '999'
                   
     # map discount        
     if len(record['I1IDIS']) > 0:
@@ -101,7 +95,7 @@ def DLIM00P_validate_fields(record):
         except KeyError:
             record['I1IDIS'] = ''
             
-    # Set default values for I1LPF, I1CFBF, I1TXP1, I1TXP2, I1TXP3, I1TXP4, I1TXP5, I1UOM, I1CSMC, I1EDTT, I1IGLC, I1CAT, I1EFEX
+    # Set default values for I1LPF, I1CFBF, I1TXP1, I1TXP2, I1TXP3, I1TXP4, I1TXP5, I1UOM, I1CSMC, I1EDTT, I1IGLC, I1EFEX
     record['I1LPF'] = 'Y'
     record['I1CFBF'] = 'N'
     record['I1TXP1'] = '{:.2f}'.format(100.00)
@@ -115,7 +109,6 @@ def DLIM00P_validate_fields(record):
     record['I1CPER'] = '1'
     record['I1EDTT'] = ''
     record['I1IGLC'] = ''
-    record['I1CAT'] = ''
     record['I1EFEX'] = 'U'
     
     if len(record['I1OSRD']) == 0:
@@ -188,9 +181,7 @@ def DLIM00P_validate_fields(record):
     for field_index in range(0, len(DLIM00P_Field_format),3):
         field_type = field_index + 1
         field_length = field_index + 2
-        #print(f' index:', field_index, 'key:', DLIM00P_Field_format[field_index], 'Type: ', DLIM00P_Field_format[field_type], 'Length: ', DLIM00P_Field_format[field_length])
         if record[DLIM00P_Field_format[field_index]]:
-            #log_messages['field'] = DLIM00P_Field_format[field_index]
             if  len(record[DLIM00P_Field_format[field_index]]) >  int(DLIM00P_Field_format[field_length]):
                 log_messages['length is greater than'] = DLIM00P_Field_format[field_length]
                 skip_record = True
@@ -224,10 +215,10 @@ except mysql.connector.Error as error:
     exit()
 if connection.is_connected():
     db_Info = connection.get_server_info()
-    cursor = connection.cursor()
+    cursor = connection.cursor(buffered=True)
     cursor.execute("select database();")
     record = cursor.fetchone()
-    print("You're connected to database: ", record) 
+    #print("You're connected to database: ", record) 
 # open output file
 output_file = open(output_filename, 'w')
 csvwriter = csv.writer(output_file, delimiter='\t')
@@ -261,7 +252,16 @@ for row in input_rec:
         else:
             # strip quotes, delimiters and whitespace from ISBN
             output_record['I1I'] = output_record['I1I'].strip(' -.''')
-
+            
+        pub_status_code = row['I1STKR']
+        if row['Last Sold Date']:
+            last_sold_date = datetime.datetime.strptime(row['Last Sold Date'], "%m/%d/%Y").strftime("%Y%m%d")
+        else:
+            last_sold_date = ''
+        # ignore any mapping errors for 'old' records
+        if last_sold_date < "20170101" and (pub_status_code == 'O' or pub_status_code == 'D'):
+            skip_record = True
+                    
         # I1DIV map
         if row['Company NO']:
             if int(row['Company NO']) == 2 or int(row['Company NO']) == 12:
@@ -271,88 +271,68 @@ for row in input_rec:
             else:
                 map_key = row['Company NO'] + row['Major Disc ID']
                 map_key = map_key.strip()
-                map_key = map_key.lstrip('0')
+                #map_key = map_key.lstrip('0')
                 # match 2222*
                 if I1DIV_match.match(output_record['I1DIV']):
-                    output_record['I1DIV'] = 'CCC'
+                    output_record['I1DIV'] = '001'
                 else:
                     try:
-                        output_record['I1DIV'] = I1DIV_map[map_key].zfill(3)
+                        output_record['I1DIV'] = I1DIV_map[map_key][0].zfill(3)
+                        output_record['I1CAT'] = I1DIV_map[map_key][1]
                     except KeyError:
-                        output_record['I1DIV'] = ''
-                        log_messages['I1DIV'] = 'mapping error'
-                        log_messages['Company NO & Major Disc ID'] = map_key
-                        log_messages['Record ID'] = output_record['I1I']
-                        log_json_message()
+                        output_record['I1DIV'] = '001'
+                        output_record['I1CAT'] = 'MSC'
+                        if not skip_record:
+                            log_messages['I1DIV'] = 'mapping error'
+                            log_messages['Company NO & Major Disc ID'] = map_key
+                            log_messages['Record ID'] = output_record['I1I']
+                            log_json_message()
+        # I1GRP map
+        grp_key = row['Company NO'] + row['Publisher ID']
+        try:
+            output_record['I1GRP'] = I1GRP_Primary[grp_key][0]
+            output_record['I1DIV'] = I1GRP_Primary[grp_key][1]
+        except KeyError:
+            if not skip_record:
+                log_messages['I1GRP'] = 'mapping error'
+                log_messages['Company & Publisher'] = grp_key
+                log_messages['Record ID'] = output_record['I1I']
+                log_json_message()
+            output_record['I1GRP'] = '001'
+        output_record['I1GRP'] = output_record['I1GRP'].zfill(3)
+        # I1GRP for Journals
+        try:
+            output_record['I1GRP'] = IGRP_journals[output_record['I1I']][0]
+            output_record['I1CLS'] = IGRP_journals[output_record['I1I']][1]
+            output_record['I1DIV'] = '003'
+        except KeyError:
+            try:
+                output_record['I1GRP'] = IGRP_journals_product[row['Elan Product ID']][0]
+                output_record['I1CLS'] = IGRP_journals_product[row['Elan Product ID']][1]
+                output_record['I1DIV'] = '003'
+            except KeyError:
+                pass
+                   
         # I1BRNC - leave blank - note for 8/11/2022
         output_record['I1BRNC'] = ''
-        # Rotunda journals have the same Major Disc: 10EIT
-        #if row['Major Disc ID'] == '10EIT':
-        #    try:
-        #        output_record['I1BRNC'] = I1BRNC_rotunda_map[row['Elan Product ID']]
-        #    except KeyError:
-        #        log_messages['I1BRNC Rotunda mapping error'] = row['Elan Product ID']
-        #        log_messages['Record ID'] = output_record['I1I']
-        #        log_json_message()
-        #        output_record['I1BRNC'] = ''
-        #else:
-        #    
-        #    map_key = row['Company NO'] + row['Publisher ID']
-        #    map_key = map_key.strip()
-        #    map_key = map_key.lstrip('0')
-        #    try:
-        #        output_record['I1BRNC'] = I1BRNC_primary_map[map_key][0]
-        #        output_record['I1DIV'] =  I1BRNC_primary_map[map_key][1]
-        #        
-        #    except KeyError:
-        #        log_messages['I1BRNC'] = 'primary mapping error'
-        #        log_messages['Company NO & Publisher ID'] = map_key
-        #        log_messages['Record ID'] = output_record['I1I']
-        #        log_json_message()
-        #        output_record['I1BRNC'] = ''
-                
-        # Map I1PKG
+
+        # Map I1PKG from I1CAT
         try:
-            output_record['I1PKG'] = pkg_group[row['I1GRP']]
+            output_record['I1PKG'] = i1cat_to_i1pkg_map[output_record['I1CAT']]
         except KeyError:
-            log_messages['I1PKG map failed'] = row['I1GRP']
-            output_record['I1PKG'] = ''
-        try:
-            output_record['I1GRP'] = item_group[row['I1GRP']]
-        except KeyError:
-            log_messages['I1GRP map failed'] = row['I1GRP']
-            output_record['I1GRP'] = ''
-        # skip record if primary key is blank
-        if not output_record['I1I']:
-            skip_record = True
-            log_messages['I1I is empty'] = 'record skipped'
-        
-        #try:
-        #    record['I1CAT'] = DLIM00P_minor_disc[record['I1CAT']]
-        #except KeyError:
-            # truncate to 3 characters
-        #    record['I1CAT'] = record['I1CAT'][0:3]
-            # save for validation checks
-        pub_status_code = row['I1STKR']
-        last_sold_date = row['Last Sold Date']
+            if not skip_record:
+                log_messages['I1CAT to I1PKG map failed'] = output_record['I1CAT']
+            output_record['I1PKG'] = 'OTHER'
+                        
         
         # map I1STKF
         # start with 'N' as a default
         output_record['I1STKF'] = 'N'
-        #if row['I1GRP'] == 'O':
-        #    output_record['I1STKF'] = 'Y'
         if row['Non Stock Flag']== 'Y':
             output_record['I1STKF'] = 'D'
         else:
             if row['Non Stock Flag']== 'N':
                 output_record['I1STKF'] = 'Y'
-            #if row['Non Stock Flag']== 'N' and row['User Field Value 3'] == 'L':
-            #    output_record['I1STKF'] = 'N'
-            #else:
-            #    output_record['I1STKF'] = 'N'  
-        #if (row['I1GRP'] == 'C' or row['I1GRP'] == 'P') and row['User Field Value 3'] != 'L':
-        #    output_record['I1STKF'] = 'Y'
-        
         # map I1STKR
         try:
             output_record['I1STKR'] = I1STKR_map[row['I1STKR']]
@@ -383,13 +363,15 @@ for row in input_rec:
                 if not skip_record:
                     csvwriter.writerow(values)
                     write_count += 1
+                else:
+                    skip_count += 1
         else:
             skip_count += 1
 
 # close database connection
 if connection.is_connected():
      connection.close()
-     print("MySQL connection is closed")            
+     #print("MySQL connection is closed")            
 
 log_messages = {}
 log_messages['Records Processed']= line_count
