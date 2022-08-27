@@ -91,11 +91,10 @@ def DLCM00P_validate_fields(record):
     # limit C1CMNT to 40 chars and redact non-printables
     record['C1CMNT'] = re.sub(redact_char, "", record['C1CMNT'])[0:39]
     # Map C1CTO
-    if record['C1CTO'] == 'N' or record['C1CTO'] == 'F':
-        record['C1CTO'] = 'N'
-    else:
-        if record['C1CTO'] == 'F1':
-         record['C1CTO'] = 'Y'   
+    if record['C1CTO'] == 'F1':
+        record['C1CTO'] = 'Y'
+    else:    
+        record['C1CTO'] = 'N' 
     # validate fields
     for field_index in range(0, len(DLCM00P_Field_format),3):
         field_type = field_index + 1
@@ -187,7 +186,8 @@ with open(input_filename) as csv_file:
         output_record['C1PDLVN'] = '000'
         output_record['C1PHN'] = (row['Telephone Area'] + ' ' + row['Telephone Number']).strip()
         output_record['C1FAX'] = (row['Fax Area'] + ' ' + row['Fax Number']).strip()
-        # hold for C1BR - when defined
+        # set C1BR 
+        output_record['C1BR'] = 'NA'
         if not row['POSTAL ADDRESS 6'] == 'US':
             output_record['C1RGN'] = 'EX'
         else:
@@ -198,24 +198,30 @@ with open(input_filename) as csv_file:
         except KeyError:
             log_messages['C1CDIS'] = 'mapping failed for ' + output_record['C1CDIS']
             output_record['C1CDIS'] = ''
-        output_record['C1PRCD'] = '00'
         if int(output_record['C1XINV']) > 0:
             output_record['C1XINV'] = str(int(output_record['C1XINV'])-1)
         else:
             output_record['C1XINV'] = '0'
         output_record['C1XNVF'] = 'N'
         
-        if not output_record['C1CCLS']:
-            output_record['C1CCLS'] = 'GEN'
+        
+        output_record['C1CCLS'] = 'GEN'
         output_record['C1CIAC'] = '0'
         output_record['C1IBR'] = '10'
-        output_record['C1WH'] = '21'
+        output_record['C1WH'] = '01'
         output_record['C1ONRF'] = 'Y'
         output_record['C1CUTO'] = 'N'
         output_record['C1BOCR'] = '1'
         output_record['C1INCA'] = 'N'
         output_record['C1DFCF'] = 'N'
         output_record['C1CFRT'] = 'N'
+        output_record['C1CIEC'] = '1'
+        output_record['C1DLVP'] = 'Y'
+        output_record['C1ECR'] = 'N'
+        output_record['C1IBR'] = '00'
+        output_record['C1MIF'] = 'N'
+        output_record['C1PRCD'] = '00'
+
         try:
             output_record['C1MJS'] = C1MJS_acct_map[row['ACCOUNT NUMBER']]
         except KeyError:
@@ -256,13 +262,21 @@ with open(input_filename) as csv_file:
                 log_messages['C1CBOA map failure'] = output_record['C1CBOA']
                 log_json_message(log_messages)
                 output_record['C1CBOA'] = 'A'
+        # map C1FSCF
+        if output_record['C1FSCF'] =='N':
+             output_record['C1FSCF'] = 'Y'
+        else:
+            output_record['C1FSCF'] = 'N'
         # Set Default
         output_record['C1SBI'] = 'N'
         output_record['C1ONRF'] = 'N'
         output_record['C1CONO'] = '00'
         output_record['C1PYTC'] = ''
         output_record['C1EXCD'] = 'U'
-        output_record['C1STTY'] = ''
+        if row['Invoice Copies'] == '0':
+            output_record['C1STTY'] = 'Z'
+        else:
+            output_record['C1STTY'] = 'A'
         output_record['C1OIF'] = 'Y'
         # Registration and Change Timestamps and users
         output_record['C1REGZ'] = row['Create Date']

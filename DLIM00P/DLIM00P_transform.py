@@ -287,6 +287,8 @@ for row in input_rec:
                             log_messages['Company NO & Major Disc ID'] = map_key
                             log_messages['Record ID'] = output_record['I1I']
                             log_json_message()
+        # force leading zeroes
+        output_record['I1DIV'] = output_record['I1DIV'].zfill(3)
         # I1GRP map
         grp_key = row['Company NO'] + row['Publisher ID']
         try:
@@ -334,12 +336,12 @@ for row in input_rec:
             if row['Non Stock Flag']== 'N':
                 output_record['I1STKF'] = 'Y'
         # map I1STKR
-        try:
-            output_record['I1STKR'] = I1STKR_map[row['I1STKR']]
-        except KeyError:
-            log_messages['I1STKR map error'] = output_record['I1STKR']
-            output_record['I1STKR'] = ''
-            
+        #try:
+        #    output_record['I1STKR'] = I1STKR_map[row['I1STKR']]
+        #except KeyError:
+        #    log_messages['I1STKR map error'] = output_record['I1STKR']
+        #    output_record['I1STKR'] = ' '
+        output_record['I1STKR'] = ' '    
         # check all fields
         if not skip_record:
             DLIM00P_validate_fields(output_record)

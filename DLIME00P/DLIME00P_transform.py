@@ -70,8 +70,6 @@ def database_insert(insert_record):
 def DLIME00P_validate_fields(record):
     global skip_record
     # field specific mapping
-    # normalize ISBN13
-
     # validate fields
     for field_index in range(0, len(DLIME00P_Field_format),3):
         field_type = field_index + 1

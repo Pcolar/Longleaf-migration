@@ -1,3 +1,9 @@
+### DLCMP00P - A System or a Pack is a concept in which several individual titles can be logicallygrouped and sold as a single unit. 
+# A Pack could comprise of several individual books grouped and sold as a single unit, together with various miscellaneous titles such as a display rack or other promotional material, 
+# or it could comprise of a book with a cassette and/or video attached. 
+# A System is brought into stock in component form; it is stored by component, but sold as one whole unit. 
+# An example of this might be books sold as a set, a series or as an encyclopedia.
+
 import json
 import csv
 import datetime, time
@@ -65,6 +71,23 @@ def database_insert(insert_record):
         log_json_message(log_messages)
         skip_record = True
         
+# Verify a customer master record exists in the database
+def check_item_master(item_key):
+    import mysql.connector
+    global cursor, skip_record
+    item_list = [item_key]
+    try:
+        qry = 'Select I1I from item_master where I1I = %s'
+        cursor.execute(qry, item_list)
+        connection.commit()
+        item_master_rec = cursor.fetchall()
+    except mysql.connector.DatabaseError as error:
+        skip_record = True
+        # skip error reporting if record not found in Customer Master
+        log_messages['MySQL_query'] = str(error)
+        log_messages['item_master not found'] = item_key
+        log_json_message(log_messages)    
+        
 def DLCMP00P_validate_fields(record):
     global skip_record
     # field specific mapping
@@ -91,7 +114,7 @@ except mysql.connector.Error as error:
     exit()
 if connection.is_connected():
     db_Info = connection.get_server_info()
-    cursor = connection.cursor()
+    cursor = connection.cursor(buffered=True)
     cursor.execute("select database();")
     record = cursor.fetchone()
     # print("You're connected to database: ", record) 
@@ -126,6 +149,9 @@ with open(input_filename) as csv_file:
 
         #check all fields
         DLCMP00P_validate_fields(output_record)
+        # check if a Item master record exists
+        if not skip_record:
+            check_item_master(output_record['P9PI'])
         if not skip_record:
             # validate output record to specification
             if not v.validate(output_record):

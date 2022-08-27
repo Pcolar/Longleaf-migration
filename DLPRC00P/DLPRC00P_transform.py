@@ -71,8 +71,26 @@ def database_insert(insert_record):
         log_messages['MySQL_insert'] = str(error)
         log_json_message(log_messages)
         skip_record = True
+        
+# Verify a customer master record exists in the database
+def check_item_master(item_key):
+    import mysql.connector
+    global cursor, skip_record
+    item_list = [item_key]
+    try:
+        qry = 'Select I1I from item_master where I1I = %s'
+        cursor.execute(qry, item_list)
+        connection.commit()
+        item_master_rec = cursor.fetchall()
+    except mysql.connector.DatabaseError as error:
+        skip_record = True
+        # skip error reporting if record not found in Customer Master
+        log_messages['MySQL_query'] = str(error)
+        log_messages['item_master not found'] = item_key
+        log_json_message(log_messages)    
     
-def DLPRC00P_validate_fields(record, skip_record):
+def DLPRC00P_validate_fields(record):
+    global skip_record
     # field specific mapping
     log_messages['I9I'] = record['I9I']
     
@@ -142,7 +160,7 @@ def DLPRC00P_validate_fields(record, skip_record):
         record['I9QTY10'] = f"{float(record['I9QTY10']):.4f}"
     if record['I9PRC10']:
         record['I9PRC10'] = f"{float(record['I9PRC10']):.2f}"
-    
+    record['I9PRCD'] = '00'
     
 ### MAIN ###  
 # field validator setup
@@ -162,7 +180,7 @@ except mysql.connector.Error as error:
     sys.exit()
 if connection.is_connected():
     db_Info = connection.get_server_info()
-    cursor = connection.cursor()
+    cursor = connection.cursor(buffered=True)
     cursor.execute("select database();")
     record = cursor.fetchone()
     # print("You're connected to database: ", record) 
@@ -207,9 +225,14 @@ with open(input_filename) as csv_file:
         for col in field_map.keys():
                 # move data to output column
                 output_record[col] = row[field_map[col]]
-             
+                
+        # check if a Item master record exists
+        if not skip_record:
+            check_item_master(output_record['P9PI'])
+     
         #check all fields
-        DLPRC00P_validate_fields(output_record, skip_record)
+        if not skip_record:
+            DLPRC00P_validate_fields(output_record)
         if not skip_record:
             # validate output record to specification
             if not v.validate(output_record):
