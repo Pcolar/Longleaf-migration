@@ -20,6 +20,7 @@ import json
 import csv
 import os, sys
 import datetime
+import string
 import requests
 import regex, re
 from cerberus import Validator
@@ -46,7 +47,7 @@ skip_record = False
 # regex
 alpha = regex.compile('\w*')
 numb = regex.compile('\d*')
-pattern = regex.compile(['\n','\u00017','\ufeff'])
+#pattern = regex.compile(['\n','\u00017','\ufeff'])
 # counters
 line_count = 0
 write_count = 0
@@ -82,20 +83,25 @@ def database_insert(insert_record):
         connection.commit()
         insert_count += 1
     except mysql.connector.DatabaseError as error:
-        log_messages['MySQL_insert'] = str(error)
-        log_json_message(log_messages)
+        if not 'Duplicate' in error:
+            log_messages['MySQL_insert'] = str(error)
+            log_json_message(log_messages)
         skip_record = True
         
 # Verify an customer master record exists in the database
 def check_customer_master(item_key):
     import mysql.connector
     global cursor, skip_record
-    
+    item_list = [item_key]
     try:
         qry = 'Select C1CN from customer_master where C1CN = %s'
-        cursor.execute(qry, item_key)
+        cursor.execute(qry, item_list)
         connection.commit()
-        cust_master_rec = cursor.fetchall()
+        cust_master_rec = cursor.fetchone()
+        if not cust_master_rec:
+            skip_record = True
+            log_messages['customer_master record not found'] = item_key
+            # log_json_message(log_messages)  
     except mysql.connector.DatabaseError as error:
         skip_record = True
         log_messages['MySQL_query'] = str(error)
@@ -153,10 +159,10 @@ except mysql.connector.Error as error:
     exit()
 if connection.is_connected():
     db_Info = connection.get_server_info()
-    cursor = connection.cursor()
+    cursor = connection.cursor(buffered=True)
     cursor.execute("select database();")
     record = cursor.fetchone()
-    print("You're connected to database: ", record) 
+    # print("You're connected to database: ", record) 
 
 # open output file
 output_file = open(output_filename, 'w')
@@ -189,7 +195,9 @@ with open(input_filename) as csv_file:
                 # move data to output column
                 output_record[col] = row[field_map[col]]
                 # normalize content
-                output_record[col] = re.sub(pattern,'',output_record[col])                
+                output_record[col] = output_record[col].replace('\n','')
+                output_record[col] = output_record[col].replace('\u00017','')
+                output_record[col] = output_record[col].replace('\ufeff', '')             
                 
             # merge Phone and Fax area + number fields
             output_record['C4DPHN'] = row['Telephone Area'] + ' ' + row['Telephone Number']
@@ -249,7 +257,7 @@ with open(input_filename) as csv_file:
 if connection.is_connected():
     cursor.close()
     connection.close()
-    print("MySQL connection is closed")            
+    # print("MySQL connection is closed")            
 
 
 log_messages['Records Processed']= line_count

@@ -19,7 +19,6 @@ from DLIC00P_format import *
 # Globals
 log_messages={}
 DLIC00P_encoding = {'I5I':'ascii','I5ICT':'ascii','I5EFDT':'ascii','I5ICC':'ascii','I5ICE':'ascii'}
-# {'C1CN': 'ascii','C1REGN': 'utf-8','C1PIDN': 'utf-8','C1PCNM': 'utf-8','C1PAD0': 'utf-8','C1PAD1': 'utf-8','C1PAD2': 'utf-8','C1PAD3': 'utf-8','C1PAD4': 'utf-8','C1PAD5': 'ascii','C1PAD6': 'utf-8','C1PDLVN': 'ascii','C1DXNO': 'ascii','C1DXLOC': 'ascii','C1PHN': 'ascii','C1FAX': 'ascii','C1CSTS': 'ascii','C1CONO': 'ascii','C1BR': 'ascii','C1RGN': 'ascii','C1SLRP': 'ascii','C1CDIS': 'ascii','C1PRCD': 'ascii','C1XINV': 'ascii', 'C1XNVF': 'ascii', 'C1CTXC': 'ascii', 'C1TXNO': 'ascii', 'C1PYTC': 'ascii', 'C1ILIC': 'ascii', 'C1SAN': 'ascii', 'C1BN': 'ascii', 'C1CCLS': 'ascii', 'C1EXCD': 'ascii', 'C1CRLM': 'ascii', 'C1CIAC': 'ascii', 'C1IBR': 'ascii', 'C1WH': 'ascii', 'C1CAR': 'ascii', 'C1FAGC': 'ascii', 'C1RUN': 'ascii', 'C1DSTP': 'ascii', 'C1STTY': 'ascii', 'C1CMNT': 'utf-8', 'C1OIF': 'ascii', 'C1DLVP': 'ascii', 'C1DLOP': 'ascii', 'C1CBOA': 'ascii', 'C1OCON': 'ascii', 'C1SBI': 'ascii', 'C1ONRF': 'ascii', 'C1CUTO': 'ascii', 'C1MIF': 'ascii', 'C1FSCF': 'ascii', 'C1CIEC': 'ascii', 'C1INCA': 'ascii', 'C1DFCF': 'ascii', 'C1AFCG': 'ascii', 'C1CFRT': 'ascii', 'C1CL1': 'ascii', 'C1CL2': 'ascii', 'C1CL3': 'ascii', 'C1CL4': 'ascii', 'C1CL5': 'ascii', 'C1MJS': 'ascii', 'C1STN': 'ascii', 'C1BOCR': 'ascii', 'C1ECR': 'ascii', 'C1STMT': 'ascii', 'C1RLSP': 'ascii', 'C1CTO': 'ascii', 'C1CASC': 'utf-8', 'C1REGZ': 'ascii', 'C1REGU': 'ascii', 'C1CHGZ': 'ascii', 'C1CHGU': 'ascii'}
 DLIC00P_validator_schema = {'I5I':{'type':'string','empty':False,'maxlength':20},'I5ICT':{'type':'string','empty':False,'maxlength':8},'I5EFDT':{'type':'string','empty':False,'maxlength':10},'I5ICC':{'type':'string','empty':True,'maxlength':8},'I5ICE':{'type':'string','empty':True,'maxlength':8}}
 DLIC00P_record = DLIC00P_encoding.keys()
 llmigration_table='item_class'
@@ -45,8 +44,8 @@ skipped_count = 0
 
 def log_json_message(log_message):
     """print out  in json tagged log message format"""
-    log_message['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    log_message['program'] = os.path.basename(__file__)
+    #log_message['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    #log_message['program'] = os.path.basename(__file__)
     print(json.dumps(log_message))
     log_message={}
     
@@ -149,7 +148,7 @@ except mysql.connector.Error as error:
     exit()
 if connection.is_connected():
     db_Info = connection.get_server_info()
-    cursor = connection.cursor()
+    cursor = connection.cursor(buffered=True)
     cursor.execute("select database();")
     record = cursor.fetchone()
     #print("You're connected to database: ", record) 
@@ -215,6 +214,7 @@ with open(input_file) as csv_file:
         process_record = {}
         output_record = {}
         # initialize item_class keys
+
         for x in range(0, len(class_aggregator_map)):
             process_record[class_aggregator_map[x]] = ''
         
@@ -265,13 +265,21 @@ with open(input_file) as csv_file:
                     output_record['I5ICT'] = 'IC-RGHTI'
                     output_record['I5ICC'] = item_record[Can_Distribute_Countries_Country_ID] 
                     write_output(output_record)
+print('Processing complete for ', input_file)
                         
 # process all entries in the aggregator DICT
 for item_record in item_dict.items():
+    skip_record = False
+    # clear messages
+    log_messages = {}
     # move content to output record
     output_record['I5I'] = item_record[1][ISBN13]
+    log_messages['ISBN13'] = item_record[1][ISBN13]
     if not output_record['I5I']:
         skip_record = True
+    else:
+        output_record['I5I'] = re.sub('-','', output_record['I5I'])
+        output_record['I5I'] = re.sub('.','', output_record['I5I'])
     # set uniform effective date
     output_record['I5EFDT'] = '2022-08-01'
     output_record['I5ICE'] = ''
@@ -315,18 +323,26 @@ for item_record in item_dict.items():
     # retrieve the corresponding item record
     try:
         qry = 'Select Royalties_Flag from informer_DLIM00P where I1I = %s or I1AI = %s'
-        cursor.execute(qry, output_record['I5I'], output_record['I5I'])
+        item_list = [output_record['I5I'], output_record['I5I']]
+        cursor.execute(qry, item_list)
         connection.commit()
-        item_master_rec = cursor.fetchall()
-        if item_master_rec[0] == 'Y':
-            output_record['I5ICC'] = ''
-        else:
+        item_master_rec = cursor.fetchone()
+        if not item_master_rec:
+            skip_record = True
+            log_messages['IC-ROY item_master not found'] = output_record['I5I'] 
             output_record['I5ICC'] = 'N'
+        else:
+            if item_master_rec[0] == 'Y':
+                output_record['I5ICC'] = ''
+            else:
+                output_record['I5ICC'] = 'N'
     except mysql.connector.DatabaseError as error:
         output_record['I5ICC'] = 'N'
         log_messages['MySQL_query'] = str(error)
         log_messages['IC-ROY item_master not found'] = output_record['I5I']    
     output_record['I5ICT'] = 'IC-ROY'
+    #if log_messages:
+        #log_json_message(log_messages)
     write_output(output_record)
         
         
@@ -334,7 +350,7 @@ for item_record in item_dict.items():
 if connection.is_connected():
     cursor.close()
     connection.close()
-    print("MySQL connection is closed")            
+    # print("MySQL connection is closed")            
 
 log_messages = {}
 log_messages['Records Written to output file']= write_count

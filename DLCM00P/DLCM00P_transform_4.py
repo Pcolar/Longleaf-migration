@@ -98,7 +98,7 @@ if connection.is_connected():
     cursor = connection.cursor()
     cursor.execute("select database();")
     record = cursor.fetchone()
-    print("You're connected to database: ", record) 
+    # print("You're connected to database: ", record) 
 
 for field_index in range(0, len(DLCM00P_aliases_field_format),3):
     field_type = field_index + 1
@@ -119,8 +119,7 @@ with open(input_filename) as csv_file:
         # Field specific mappings
         output_record['C1CN'] = row['Name Id']
         # length of C1CN should be 8
-        if len(output_record['C1CN']) < 8:
-            output_record['C1CN'] = '{:0>8}'.format(output_record['C1CN'])
+        output_record['C1CN'] = output_record['C1CN'].zfill(8)
         
         # map update fields
         if row['Aliases']:
@@ -152,7 +151,7 @@ with open(input_filename) as csv_file:
 if connection.is_connected():
     cursor.close()
     connection.close()
-    print("MySQL connection is closed")            
+    # print("MySQL connection is closed")            
 
 log_messages = {}
 log_messages['Records Processed']= line_count

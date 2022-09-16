@@ -11,5 +11,15 @@ DLIME00P_field_format = [
 DLIME00P_field_map = {
 'BII': 'ISBN13',
 'BICT': 'Author Contact Types',
+'BISEQDM': 'Author',
 'BIFNM': 'Author Name Full Name'
+}
+DLIME00P_BICT_map = {
+'AG': 'AUT',
+'AU': 'AUT',
+'ED': 'EDS',
+'OT': 'ZZZ',
+'PB': 'ZZZ',
+'RR': 'ZZZ',
+'CO': 'ZZZ'
 }

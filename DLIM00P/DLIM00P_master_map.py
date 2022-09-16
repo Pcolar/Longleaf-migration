@@ -8,7 +8,7 @@ field_map = {
 'I1SUPI': 'I1SUPI',
 'I1IDSC': 'I1IDSC',
 'I1IDIS': 'Discount ID',
-'I1IEDC': 'I1IEDC',
+# 'I1IEDC': 'I1IEDC',
 'I1CMNT': 'I1CMNT',
 'I1ORGN': 'Country Of Origin',
 'I1PACK': 'Set Code',
@@ -21,5 +21,6 @@ field_map = {
 'I1REGD': 'Entered Date',
 'I1REGU': 'Entered User ID',
 'I1CHGZ': 'Last Change Date',
-'I1CHGU': 'Last Change User ID'
+'I1CHGU': 'Last Change User ID',
+'I1OSRD': 'First Due Date'
 }

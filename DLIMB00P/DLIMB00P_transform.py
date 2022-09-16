@@ -69,8 +69,9 @@ def database_insert(insert_record):
         connection.commit()
         insert_count += 1
     except mysql.connector.DatabaseError as error:
-        log_messages['MySQL_insert'] = str(error)
-        log_json_message(log_messages)
+        if not 'Duplicate' in error:
+            log_messages['MySQL_insert'] = str(error)
+            log_json_message(log_messages)
         skip_record = True
         
 def DLIMB00P_validate_fields(record):
@@ -191,7 +192,10 @@ for row in input_rec:
             qry = 'Select I1I from item_master where I1I = %s'
             cursor.execute(qry, item_list)
             connection.commit()
-            item_master_rec = cursor.fetchall()
+            item_master_rec = cursor.fetchone()
+            if not item_master_rec:
+                skip_record = True
+                log_messages['item_master not found'] = output_record['BJI']
         except mysql.connector.DatabaseError as error:
             log_messages['MySQL_query'] = str(error)
             log_messages['item_master not found'] = output_record['BJI']

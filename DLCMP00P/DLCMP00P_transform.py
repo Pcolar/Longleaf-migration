@@ -80,7 +80,10 @@ def check_item_master(item_key):
         qry = 'Select I1I from item_master where I1I = %s'
         cursor.execute(qry, item_list)
         connection.commit()
-        item_master_rec = cursor.fetchall()
+        item_master_rec = cursor.fetchone()
+        if not item_master_rec:
+            skip_record = True
+            log_messages['item_master not found'] = item_key
     except mysql.connector.DatabaseError as error:
         skip_record = True
         # skip error reporting if record not found in Customer Master

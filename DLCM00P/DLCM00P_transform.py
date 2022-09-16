@@ -1,3 +1,4 @@
+### DLCM00P – Customer master file stores customers' names and addresses, as well as many other codes.
 import json
 import csv
 import datetime, time
@@ -204,8 +205,6 @@ with open(input_filename) as csv_file:
             output_record['C1XINV'] = '0'
         output_record['C1XNVF'] = 'N'
         
-        
-        output_record['C1CCLS'] = 'GEN'
         output_record['C1CIAC'] = '0'
         output_record['C1IBR'] = '10'
         output_record['C1WH'] = '01'
@@ -222,6 +221,17 @@ with open(input_filename) as csv_file:
         output_record['C1MIF'] = 'N'
         output_record['C1PRCD'] = '00'
 
+        if output_record['C1CCLS']:
+            try:
+                output_record['C1CCLS'] = C1CCLS_map[output_record['C1CCLS']]
+            except KeyError:
+                log_messages['C1CCLS mapping error'] = output_record['C1CCLS']
+                log_messages['Record ID'] = output_record['C1CN']
+                log_json_message(log_messages)
+                output_record['C1CCLS'] = 'PP'
+        else:
+            output_record['C1CCLS'] = 'PP'
+        
         try:
             output_record['C1MJS'] = C1MJS_acct_map[row['ACCOUNT NUMBER']]
         except KeyError:
@@ -279,12 +289,15 @@ with open(input_filename) as csv_file:
             output_record['C1STTY'] = 'A'
         output_record['C1OIF'] = 'Y'
         # Registration and Change Timestamps and users
+        # Iptor requires timestamps to be "YYYY-MM-DD-HH.MM.SS YYYY-MM-DD-HH.MM.SSEDT"
         output_record['C1REGZ'] = row['Create Date']
         output_record['C1CHGZ'] = row['Last Changed Date']
         if output_record['C1REGZ']:
-            output_record['C1REGZ'] =  datetime.datetime.strptime(output_record['C1REGZ'], "%b %d, %Y").strftime("%Y-%m-%dT%H:%M:%SZ")
+            timecalc = datetime.datetime.strptime(output_record['C1REGZ'], "%b %d, %Y").strftime("%Y-%m-%d")
+            output_record['C1REGZ'] =  timecalc + "-04.00.00 " + timecalc + "-00.00.00EDT"
         if output_record['C1CHGZ']:
-            output_record['C1CHGZ'] =  datetime.datetime.strptime(output_record['C1CHGZ'], "%b %d, %Y").strftime("%Y-%m-%dT%H:%M:%SZ")
+            timecalc = datetime.datetime.strptime(output_record['C1CHGZ'], "%b %d, %Y").strftime("%Y-%m-%d")
+            output_record['C1CHGZ'] = timecalc + "-04.00.00 " + timecalc + "-00.00.00EDT"
         output_record['C1CHGU'] = output_record['C1CHGU'][0:9]
         output_record['C1REGU'] = output_record['C1REGU'][0:9]
         if not skip_record:

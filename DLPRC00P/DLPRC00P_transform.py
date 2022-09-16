@@ -81,7 +81,10 @@ def check_item_master(item_key):
         qry = 'Select I1I from item_master where I1I = %s'
         cursor.execute(qry, item_list)
         connection.commit()
-        item_master_rec = cursor.fetchall()
+        item_master_rec = cursor.fetchone()
+        if not item_master_rec:
+            skip_record = True
+            log_messages['item_master not found'] = item_key
     except mysql.connector.DatabaseError as error:
         skip_record = True
         # skip error reporting if record not found in Customer Master
@@ -91,7 +94,6 @@ def check_item_master(item_key):
     
 def DLPRC00P_validate_fields(record):
     global skip_record
-    # field specific mapping
     log_messages['I9I'] = record['I9I']
     
     #globals
@@ -115,6 +117,10 @@ def DLPRC00P_validate_fields(record):
     previous_date = save_date
     # default currency to 'U' - USD
     record['I9EXCD'] = 'U'
+    # default Type of Sale
+    record['I9TOS'] = ''
+    # default PRICE FORMULA = '1'
+    record['I9PFRM'] = '1'
     # enforce decimal precision
     if record['I9RRP']:
         record['I9RRP'] = f"{float(record['I9RRP']):.2f}"
@@ -218,9 +224,9 @@ with open(input_filename) as csv_file:
         
         # convert dates to uniform format
         if row['History Dates']:
-            row['History Dates'] = datetime.datetime.strptime(row['History Dates'], "%b %d %Y").strftime("%Y-%m-%d")
+            row['History Dates'] = datetime.datetime.strptime(row['History Dates'], "%b %d, %Y").strftime("%Y-%m-%d")
         if row['List Date']:
-            row['List Date'] = datetime.datetime.strptime(row['List Date'], "%b %d %Y").strftime("%Y-%m-%d")
+            row['List Date'] = datetime.datetime.strptime(row['List Date'], "%b %d, %Y").strftime("%Y-%m-%d")
            
         for col in field_map.keys():
                 # move data to output column
@@ -228,7 +234,7 @@ with open(input_filename) as csv_file:
                 
         # check if a Item master record exists
         if not skip_record:
-            check_item_master(output_record['P9PI'])
+            check_item_master(output_record['I9I'])
      
         #check all fields
         if not skip_record:

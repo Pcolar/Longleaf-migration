@@ -3,5 +3,6 @@ field_map = {
 'I9PRCD': 'Price Class',
 'I9EFFD': 'History Dates',
 'I9EXPD': 'History Dates',
-'I9RRP': 'History Prices'
+'I9RRP': 'List Price',
+'I9PRC1': 'History Prices'
 }

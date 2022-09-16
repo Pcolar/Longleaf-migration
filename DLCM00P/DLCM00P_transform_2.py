@@ -11,13 +11,19 @@ import mysql.connector
 
 # hidden parameters
 from secrets import *
-from DLCD00P_field_format import *
+from DLCD00P_map import *
+from DLCD00P_format import *
 
 # Globals
 log_messages={}
+#DLCD00P_encoding = {'C4CN': 'ascii', 'C4DLVN': 'ascii', 'C4DCNM': 'utf-8', 'C4DAD0': 'utf-8', 'C4DAD1': 'utf-8', 'C4DAD2': 'utf-8', 'C4DAD3': 'utf-8', 'C4DAD4': 'utf-8', 'C4DAD5': 'ascii', 'C4DAD6': 'utf-8', 'C4DPHN': 'ascii', 'C4DFAX': 'ascii', 'C4DXNO': 'ascii', 'C4DXLOC': 'ascii', 'C4CSTS': 'ascii', 'C4SRCH': 'utf-8', 'C4CAR': 'ascii', 'C4FAGC': 'ascii', 'C4DSTP': 'ascii', 'C4RUN': 'ascii'}
+#DLCD00P_validator_schema = {'C4CN': {'type': 'string','maxlength': 10,'required':True},'C4DLVN': {'type': 'string','maxlength': 3,'required':True},'C4DCNM': {'type': 'string','maxlength': 60},'C4DAD0': {'type': 'string','maxlength': 60},'C4DAD1': {'type': 'string','maxlength': 60},'C4DAD2': {'type': 'string','maxlength': 60},'C4DAD3': {'type': 'string','maxlength': 60},'C4DAD4': {'type': 'string','maxlength': 20},'C4DAD5': {'type': 'string','maxlength': 20},'C4DAD6': {'type': 'string','maxlength': 60},'C4DPHN': {'type': 'string','maxlength': 20},'C4DFAX': {'type': 'string','maxlength': 20},'C4DXNO': {'type': 'string','maxlength': 10},'C4DXLOC': {'type': 'string','maxlength': 20},'C4CSTS': {'type': 'string','maxlength': 1},'C4SRCH': {'type': 'string','maxlength': 10},'C4CAR': {'type': 'string','maxlength': 2},'C4FAGC': {'type': 'string','maxlength': 2},'C4DSTP': {'type': 'string','maxlength': 3},'C4RUN': {'type': 'string','maxlength': 3}}
+#DLCD00P_record = list(DLCD00P_encoding.keys())
+
 DLCD00P_encoding = {'C1CN': 'ascii','C1TXNO': 'ascii', 'C1CAR': 'ascii', 'C1MIF': 'ascii', 'C1FSCF': 'ascii'}
 DLCD00P_validator_schema = {'C1CN':{'type':'string','required':True,'maxlength':8},'C1TXNO':{'type':'string','empty':True,'maxlength':15},'C1CAR':{'type':'string','empty':True,'maxlength':2},'C1MIF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']},'C1FSCF':{'type':'string','empty':True,'maxlength':1,'allowed':['Y','N']}}
-DLCD00P_record = DLCD00P_encoding.keys()
+DLCD00P_record = list(DLCD00P_encoding.keys())
+
 llmigration_table='customer_master'
 input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCM00P/DLCD00P-Book Customer Addresses.csv'
 skip_record = False
@@ -60,25 +66,7 @@ def database_update(update_record):
     except mysql.connector.DatabaseError as error:
         log_messages['MySQL_update'] = str(error)
         log_json_message(log_messages)
-        
-def DLCD00P_validate_fields(record, skip_record):
-        if record[DLCD00P_field_format[field_index]]:
-            log_messages['field'] = DLCD00P_field_format[field_index]
-            if  len(record[DLCD00P_field_format[field_index]]) >  int(DLCD00P_field_format[field_length]):
-                log_messages['length is greater than'] = DLCD00P_field_format[field_length]
-                skip_record = True
-            if DLCD00P_field_format[field_type] == "A":
-                if not alpha.match(record[DLCD00P_field_format[field_index]]):
-                    log_messages['field is not alpha'] = record[DLCD00P_field_format[field_index]]
-                    skip_record = True
-            if DLCD00P_field_format[field_type] == "N":
-                if not alpha.match(record[DLCD00P_field_format[field_index]]):
-                    log_messages['field is not a number'] = record[DLCD00P_field_format[field_index]]
-                    skip_record = True
-        if skip_record:
-            log_json_message(log_messages)
-    
-            
+                
 ### MAIN ###  
 # field validator setup
 v = Validator(DLCD00P_validator_schema)
@@ -100,9 +88,9 @@ if connection.is_connected():
     cursor = connection.cursor()
     cursor.execute("select database();")
     record = cursor.fetchone()
-    print("You're connected to database: ", record) 
+    #print("You're connected to database: ", record) 
 
-for field_index in range(0, len(DLCD00P_field_format),3):
+for field_index in range(0, len(DLCD00P_Book_customer_addresses),3):
     field_type = field_index + 1
     field_length = field_index + 2
 
@@ -115,14 +103,12 @@ with open(input_filename) as csv_file:
         log_messages = {}
         output_record = {}
         # initialize output_record keys
-        for x in range(0, len(DLCD00P_field_format),3):
-            output_record[DLCD00P_field_format[x]] = ''
+        for x in range(0, len(DLCD00P_record)):
+            output_record[DLCD00P_record[x]] = ''
 
         # Field specific mappings
-        output_record['C1CN'] = row['Customer ID']
         # length of C1CN should be 8
-        if len(output_record['C1CN']) < 8:
-            output_record['C1CN'] = '{:0>8}'.format(output_record['C1CN'])
+        output_record['C1CN'] = row['Customer ID'].zfill(8)
         
         # map update fields
         if row['Customer Tax Exempt Id']:
@@ -142,8 +128,8 @@ with open(input_filename) as csv_file:
         if (not row['Address Type'] == 'PRI') or row['Name Name Class Id'] == 'IR' or row['Name Name Class Id'] == 'IA':
             skip_record = True
         
-        if not skip_record:
-            DLCD00P_validate_fields(output_record, skip_record)
+        #if not skip_record:
+        #   DLCD00P_validate_fields(output_record, skip_record)
         # output record    
         if not skip_record:
             # validate output record to specification
@@ -165,7 +151,7 @@ with open(input_filename) as csv_file:
 if connection.is_connected():
     cursor.close()
     connection.close()
-    print("MySQL connection is closed")            
+    #print("MySQL connection is closed")            
 
 log_messages = {}
 log_messages['Records Processed']= line_count

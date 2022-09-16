@@ -1,3 +1,7 @@
+### DLIM00P - Title master file details include title, ISBN, classification, discount, unit cost and price details as well as various flags and codes.
+###
+###  NOTE: This load is dependent upon a populated 'contact_master' - DLCMA00P table for Author Name retrieval.
+###
 import json
 import csv
 import datetime
@@ -44,7 +48,7 @@ skip_count = 0
 def log_json_message():
     global log_messages
     """print out  in json tagged log message format"""
-    log_messages['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    # log_messages['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     print(json.dumps(log_messages))
     log_messages={}
     
@@ -104,16 +108,17 @@ def DLIM00P_validate_fields(record):
     record['I1TXP4'] = '{:.2f}'.format(0.00)
     record['I1TXP5'] = '{:.2f}'.format(0.00)
     record['I1UOM'] = 'EA'
-    record['I1CSMC'] = 'FIFO'
     record['I1PPER'] = '1'
     record['I1CPER'] = '1'
     record['I1EDTT'] = ''
     record['I1IGLC'] = ''
     record['I1EFEX'] = 'U'
     
-    if len(record['I1OSRD']) == 0:
+    if record['I1OSRD']:
+        record['I1OSRD'] = datetime.datetime.strptime(record['I1OSRD'], "%b %d, %Y").strftime("%Y-%m-%d")
+    else:
         record['I1OSRD'] = '0001-01-01'
-    
+            
     # map I1FRCHG
     if len(record['I1FRCHG']) > 0 and record['I1FRCHG'] == 'N':
         record['I1FRCHG'] = 'Y'
@@ -140,14 +145,15 @@ def DLIM00P_validate_fields(record):
         record['I1ISTS'] = ''
     # Registration and Change Timestamps
     if record['I1CHGZ']:
-        record['I1CHGZ'] =  datetime.datetime.strptime(record['I1CHGZ'], "%b %d, %Y").strftime("%Y-%m-%dT%H:%M:%SZ")
+        timecalc = datetime.datetime.strptime(record['I1CHGZ'], "%b %d, %Y").strftime("%Y-%m-%d")
+        record['I1CHGZ'] =  timecalc + "-04.00.00 " + timecalc + "-00.00.00EDT"
     if record['I1REGD']:
-        record['I1REGD'] =  datetime.datetime.strptime(record['I1REGD'], "%b %d, %Y").strftime("%Y-%m-%dT%H:%M:%SZ")
+        timecalc = datetime.datetime.strptime(record['I1REGD'], "%b %d, %Y").strftime("%Y-%m-%d")
+        record['I1REGD'] =  timecalc + "-04.00.00 " + timecalc + "-00.00.00EDT"
     else:
         record['I1REGD'] = record['I1CHGZ']
     if not record['I1REGU']:
         record['I1REGU'] = record['I1CHGU']
-    
     # enforce numeric formatting
     if record['I1EFCS']:
         record['I1EFCS'] = '{:.4f}'.format(float(record['I1EFCS']))
@@ -168,9 +174,8 @@ def DLIM00P_validate_fields(record):
     if record['I1EXTV']:
         record['I1EXTV'] = '{:.2f}'.format(float(record['I1EXTV']))
 
-    # sanitize to remove tabs, etc, truncate the item description (I1IDSC), extended description (I1IEDC),comment (I1CMNT)
+    # sanitize to remove tabs, etc, truncate the item description (I1IDSC),comment (I1CMNT)
     record['I1IDSC'] = re.sub(redact_char, "", record['I1IDSC'])[0:59]
-    record['I1IEDC'] = re.sub(redact_char, "", record['I1IEDC'])[0:59]
     record['I1CMNT'] = re.sub(redact_char, "", record['I1CMNT'])[0:39]
     # truncate I1CHGU and I1REGU
     if len(record['I1CHGU']) > 10:
@@ -194,10 +199,11 @@ def DLIM00P_validate_fields(record):
                     log_messages['field is not a number'] = record[DLIM00P_Field_format[field_index]]
                     skip_record = True
     if skip_record:
-        loggily_json_message(log_messages)
+        log_json_message()
     
             
 ### MAIN ###  
+print('NOTE: This load is dependent upon a populated contact_master - DLCMA00P table for Author Name retrieval.')
 # field validator setup
 v = Validator(DLIM00P_validator_schema)
 v.allow_unknown = True
@@ -259,89 +265,110 @@ for row in input_rec:
         else:
             last_sold_date = ''
         # ignore any mapping errors for 'old' records
-        if last_sold_date < "20170101" and (pub_status_code == 'O' or pub_status_code == 'D'):
+        #if last_sold_date < "20170101" and (pub_status_code == 'O' or pub_status_code == 'D'):
+        #    log_messages['record skipped'] = 'old record flagged'
+        #    log_messages['last sold date'] = last_sold_date
+        #    log_messages['pub status'] = pub_status_code
+        #    log_json_message(log_messages)
+        #    skip_record = True
+        # exclude Company No '999' - Longleaf records
+        if row['Company NO'] == '999':
+            log_messages['record skipped'] = 'Longleaf record - Company 999'
+            log_json_message(log_messages)
             skip_record = True
                     
-        # I1DIV map
-        if row['Company NO']:
-            if int(row['Company NO']) == 2 or int(row['Company NO']) == 12:
-                log_messages['record skipped - I1CLS'] = row['Company NO']
-                loggily_json_message(log_messages)
-                skip_record = True
-            else:
-                map_key = row['Company NO'] + row['Major Disc ID']
-                map_key = map_key.strip()
-                #map_key = map_key.lstrip('0')
-                # match 2222*
-                if I1DIV_match.match(output_record['I1DIV']):
-                    output_record['I1DIV'] = '001'
+        if not skip_record:
+            # I1DIV map
+            if row['Company NO']:
+                if int(row['Company NO']) == 12:
+                    log_messages['record skipped - company No'] = row['Company NO']
+                    #loggily_json_message(log_messages)
+                    skip_record = True
                 else:
-                    try:
-                        output_record['I1DIV'] = I1DIV_map[map_key][0].zfill(3)
-                        output_record['I1CAT'] = I1DIV_map[map_key][1]
-                    except KeyError:
+                    map_key = row['Company NO'] + row['Publisher ID']
+                    map_key = map_key.strip()
+                    if I1DIV_match.match(output_record['I1DIV']): # 2222*
                         output_record['I1DIV'] = '001'
-                        output_record['I1CAT'] = 'MSC'
+                    try:
+                        output_record['I1GRP'] = I1DIV_map[map_key][1].zfill(3)
+                        output_record['I1DIV'] = I1DIV_map[map_key][1].zfill(3)
+                    except KeyError:
                         if not skip_record:
-                            log_messages['I1DIV'] = 'mapping error'
-                            log_messages['Company NO & Major Disc ID'] = map_key
+                            log_messages['I1DIV'] = 'mapping error - record skipped'
+                            log_messages['Company NO & Publisher ID'] = row['Company NO'] + ':' + row['Publisher ID']
                             log_messages['Record ID'] = output_record['I1I']
                             log_json_message()
-        # force leading zeroes
-        output_record['I1DIV'] = output_record['I1DIV'].zfill(3)
-        # I1GRP map
-        grp_key = row['Company NO'] + row['Publisher ID']
-        try:
-            output_record['I1GRP'] = I1GRP_Primary[grp_key][0]
-            output_record['I1DIV'] = I1GRP_Primary[grp_key][1]
-        except KeyError:
-            if not skip_record:
-                log_messages['I1GRP'] = 'mapping error'
-                log_messages['Company & Publisher'] = grp_key
-                log_messages['Record ID'] = output_record['I1I']
-                log_json_message()
-            output_record['I1GRP'] = '001'
-        output_record['I1GRP'] = output_record['I1GRP'].zfill(3)
-        # I1GRP for Journals
-        try:
-            output_record['I1GRP'] = IGRP_journals[output_record['I1I']][0]
-            output_record['I1CLS'] = IGRP_journals[output_record['I1I']][1]
-            output_record['I1DIV'] = '003'
-        except KeyError:
+                            skip_record = True
+            # I1GRP for Journals
             try:
-                output_record['I1GRP'] = IGRP_journals_product[row['Elan Product ID']][0]
-                output_record['I1CLS'] = IGRP_journals_product[row['Elan Product ID']][1]
+                output_record['I1GRP'] = IGRP_journals[output_record['I1I']][0]
+                output_record['I1CLS'] = IGRP_journals[output_record['I1I']][1]
                 output_record['I1DIV'] = '003'
             except KeyError:
-                pass
-                   
-        # I1BRNC - leave blank - note for 8/11/2022
-        output_record['I1BRNC'] = ''
+                try:
+                    output_record['I1GRP'] = IGRP_journals_product[row['Elan Product ID']][0]
+                    output_record['I1CLS'] = IGRP_journals_product[row['Elan Product ID']][1]
+                    output_record['I1DIV'] = '003'
+                except KeyError:
+                    pass
+                    
+            # I1BRNC - leave blank - note for 8/11/2022
+            output_record['I1BRNC'] = ''
 
-        # Map I1PKG from I1CAT
-        try:
-            output_record['I1PKG'] = i1cat_to_i1pkg_map[output_record['I1CAT']]
-        except KeyError:
-            if not skip_record:
-                log_messages['I1CAT to I1PKG map failed'] = output_record['I1CAT']
-            output_record['I1PKG'] = 'OTHER'
-                        
-        
-        # map I1STKF
-        # start with 'N' as a default
-        output_record['I1STKF'] = 'N'
-        if row['Non Stock Flag']== 'Y':
-            output_record['I1STKF'] = 'D'
-        else:
-            if row['Non Stock Flag']== 'N':
-                output_record['I1STKF'] = 'Y'
-        # map I1STKR
-        #try:
-        #    output_record['I1STKR'] = I1STKR_map[row['I1STKR']]
-        #except KeyError:
-        #    log_messages['I1STKR map error'] = output_record['I1STKR']
-        #    output_record['I1STKR'] = ' '
-        output_record['I1STKR'] = ' '    
+            # Map I1CAT from I1PKG
+            if not row['I1GRP']:
+                row['I1GRP'] = 'O' # JS - Sept 12
+            try:
+                output_record['I1PKG'] = i1pkg_i1cat_map[row['I1GRP']][0]
+                output_record['I1CAT'] = i1pkg_i1cat_map[row['I1GRP']][1]
+            except KeyError:
+                if not skip_record:
+                    log_messages['I1PKG to I1CAT map failed'] = row['I1GRP']
+                    log_json_message()
+                output_record['I1PKG'] = 'OTHER'
+                try:
+                    output_record['I1CAT'] = DLIM00P_minor_disc[output_record['I1CAT']]
+                except KeyError:
+                    output_record['I1CAT'] = ''                        
+            # set costing method and warehouse for digital items
+            if output_record['I1CAT'] == 'EB':
+                output_record['I1CSMC'] = 'STD'
+                #output_record['I1WSC'] = ??
+            else: 
+                output_record['I1CSMC'] = 'FIFO'
+            # map I1STKF
+            # start with 'N' as a default
+            output_record['I1STKF'] = 'N'
+            if row['Non Stock Flag']== 'Y':
+                output_record['I1STKF'] = 'D'
+            else:
+                if row['Non Stock Flag']== 'N':
+                    output_record['I1STKF'] = 'Y'
+            # map I1STKR
+            #try:
+            #    output_record['I1STKR'] = I1STKR_map[row['I1STKR']]
+            #except KeyError:
+            #    log_messages['I1STKR map error'] = output_record['I1STKR']
+            #    output_record['I1STKR'] = ' '
+            output_record['I1STKR'] = ' '
+            
+            # retrieve Author Full Name from the contact_master
+            author_lookup = [row['Author'].zfill(8)]
+            try:
+                qry = 'Select D1FNM from contact_master where D1SEQDM = %s'
+                cursor.execute(qry, author_lookup)
+                connection.commit()
+                contact_master_rec = cursor.fetchone()
+                if contact_master_rec:
+                    output_record['I1IEDC'] = contact_master_rec[0][0:59]
+                else:
+                    log_messages['contact_master not found'] = row['Author'].zfill(8)
+                    log_json_message()
+                    output_record['I1IEDC'] = ''
+            except mysql.connector.DatabaseError as error:
+                log_messages['MySQL_query'] = str(error)
+                log_messages['contact_master record not found'] = author_lookup
+                log_json_message()    
         # check all fields
         if not skip_record:
             DLIM00P_validate_fields(output_record)

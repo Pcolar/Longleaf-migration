@@ -68,8 +68,7 @@ def database_insert(insert_record):
 def DLAPCM00P_validate_fields(record, skip_record):
     # field specific mapping
     # length of C1CN should be 8
-    while len(record['A1CN']) < 8:
-        record['A1CN'] = '{:0>8}'.format(record['A1CN'])
+    record['A1CN'] = record['A1CN'].zfill(8)
     log_messages['A1CN'] = record['A1CN']
     
     # field specifics
@@ -114,9 +113,11 @@ def DLAPCM00P_validate_fields(record, skip_record):
             
     # Normalize Dates
     if record['A1REGZ']:
-        record['A1REGZ'] = datetime.datetime.strptime(record['A1REGZ'], "%b %d, %Y").strftime("%Y-%m-%dT%H:%M:%SZ")
+        timecalc = datetime.datetime.strptime(record['A1REGZ'], "%b %d, %Y").strftime("%Y-%m-%d")
+        record['A1REGZ'] = timecalc + "-04.00.00 " + timecalc + "-00.00.00EDT"
     if record['A1CHGZ']:
-        record['A1CHGZ'] = datetime.datetime.strptime(record['A1CHGZ'], "%b %d, %Y").strftime("%Y-%m-%dT%H:%M:%SZ")
+        timecalc = datetime.datetime.strptime(record['A1CHGZ'], "%b %d, %Y").strftime("%Y-%m-%d")
+        record['A1CHGZ'] = timecalc + "-04.00.00 " + timecalc + "-00.00.00EDT"
         
     # Map Remittance Flag
     # set to default 

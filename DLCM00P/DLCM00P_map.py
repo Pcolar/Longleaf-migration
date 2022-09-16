@@ -2,7 +2,7 @@ field_map = {
 'C1CN': 'Name Id',
 'C1REGN': 'REGISTERED BUSINESS NAME',
 #'C1PIDN': 'PERSONAL IDENTITY',
-#'C1PCNM': 'POSTAL CUSTOMER NAME',
+'C1PCNM': 'REGISTERED BUSINESS NAME',
 'C1PAD0': 'POSTAL ADDRESS 0',
 'C1PAD1': 'POSTAL ADDRESS 1',
 'C1PAD2': 'POSTAL ADDRESS 2',
@@ -164,4 +164,21 @@ C1CBOA_map = {
 '12': '1',
 '13': 'A',
 'NOBO': 'N'
+}
+C1CCLS_map = {
+'B': 'B',
+'BC': 'BC',
+'C': 'C',
+'FRD': 'FRD',
+'GR': 'GR',
+'H': 'H',
+'L': 'L',
+'M': 'M',
+'NEW': 'PP',
+'P': 'PP',
+'PP': 'PP',
+'PRO': 'PP',
+'TAX': 'PP',
+'VHOL': 'PP',
+'Z': 'Z'
 }

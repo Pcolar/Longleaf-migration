@@ -1,8 +1,8 @@
 ### DLCMA00P – Contact master file. Contains personal information about contact person.
-### NOTE: Book Contacts-Contacts Master.csv and Individual Contacts Using Gen CompIndiv Names.csv
+### NOTE: Book Contacts-Contacts Master.csv and Individual Contacts Using Gen Comp_Indiv Names.csv
 ###  are inserted into the DB as incomplete records
 ###   Individual Contact Addresses using Gen CompInd Addresses is used to update specific fields in the database table.
-###  DLCMA00P_transform_2 extracts the data to a tsv file.
+###  DLCMA00P_extractor extracts the data to a tsv file.
 import json
 import csv
 import datetime, time
@@ -29,6 +29,7 @@ llmigration_table= 'contact_master'
 input_filename_1 = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCMA00P/Book Contacts-Contacts Master.csv'
 input_filename_2 = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCMA00P/Individual Contacts Using Gen CompIndiv Names.csv'
 input_filename_3 = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCMA00P/Individual Contact Addresses using Gen CompInd Addresses.csv'
+# output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCMA00P/DLCMA00P-'+ datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 update_record = True
 
@@ -39,11 +40,12 @@ numb = regex.compile('\d*')
 line_count = 0
 update_count = 0
 insert_count = 0
+skipped_count = 0
 
 def log_json_message(log_message):
     """print out  in json tagged log message format"""
-    #log_message['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    #log_message['program'] = os.path.basename(__file__)
+    log_message['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    log_message['program'] = os.path.basename(__file__)
     print(json.dumps(log_message))
     log_message={}
     
@@ -82,8 +84,6 @@ def DLCMA00P_validate_fields(record):
     record['D1GVNM'] = record['D1GVNM'][0:19]
     record['D1FNM'] = record['D1FNM'][0:59]
     record['D1EMLA'] = record['D1EMLA'][0:49]
-    
-    record['D1SEQDM'] = record['D1SEQDM'].zfill(8)
     # verify phone number formats
     if not record['D4ADRL6']:
         country = 'US'
@@ -109,8 +109,7 @@ def DLCMA00P_validate_fields(record):
             log_messages['invalid phone number redacted'] = record['D1PHN2']
             record['D1PHN2'] = ''
             log_json_message(log_messages)
-    # leave blank (JS 9-13-2022)
-    record['CECT'] = ''
+    record['CECT'] = record['CECT'][0:2]
     # fix address lines from Excel formula residue
     if record['D4ADRL0'] == '0':
         record['D4ADRL0'] = ''
@@ -163,167 +162,7 @@ if connection.is_connected():
     record = cursor.fetchone()
     # print("You're connected to database: ", record) 
 
-# Process Input File 1
-with open(input_filename_1) as csv_file:
-    contact_master = csv.DictReader(csv_file, delimiter=',')
-        
-    for row in contact_master:
-        # transform output record to field specifications
-        skip_record = False
-        log_messages = {}
-        output_record = {}
-        line_count += 1
-        
-        # initialize output_record keys
-        for x in range(0, len(DLCMA00P_Field_format),3):
-            output_record[DLCMA00P_Field_format[x]] = ''
-        
-        for col in field_map.keys():
-            # move data to output column
-            str_length = DLCMA00P_validator_schema[col]['maxlength'] - 1
-            output_record[col] = row[field_map[col]][0:str_length]
-        # Field specific mapping
-        output_record['D1CONO'] = '00'
-        output_record['D1EXCD'] = 'U'
-        output_record['D1SRFD'] = ''
-        output_record['D1SAL'] = ''
-        # Pad D1SEQDM to 8 characters
-        output_record['D1SEQDM'] = output_record['D1SEQDM'].zfill(8)
-        # phone number assembly
-        output_record['D1PHN1'] = (row['Contact Addresses Telephone Area'] + ' ' + row['Contact Addresses Telephone Number']).strip()
-        output_record['D1PHN1'] = output_record['D1PHN1'].replace('\n\u00017','')
-        output_record['D1PHN2'] = (row['Contact Addresses Fax Area'] + ' ' + row['Contact Addresses Fax Number']).strip()
-        output_record['D1PHN2'] = output_record['D1PHN2'].replace('\n\u00017','')
-        # Field specific tests
-        if row['Contact Names Do Not Use Ind'] == 'Y':
-            skip_record = True
-        if row['Contact Addresses Do Not Use Indicator'] == 'Y':
-            skip_record = True
-        else:
-            output_record['D4STS'] = 'A'
-        if output_record['D4ADRFMT'] == 'PRI':
-            output_record['D4ADRFMT'] = 'P'
-        else:
-            if output_record['D4ADRFMT'] == 'OTH':
-                output_record['D4ADRFMT'] = 'O'
-            else:
-                output_record['D4ADRFMT'] = ''
-                
-        # Registration and Change Timestamps and users
-        output_record['D1CRTZ'] = row['Contact Names Create Date']
-        output_record['D1CHGZ'] = row['Contact Names Last Changed Date']
-        if output_record['D1CRTZ']:
-            output_record['D1CRTZ'] =  datetime.datetime.strptime(output_record['D1CRTZ'], "%b %d, %Y").strftime("%Y-%m-%d")
-        if output_record['D1CHGZ']:
-            output_record['D1CHGZ'] =  datetime.datetime.strptime(output_record['D1CHGZ'], "%b %d, %Y").strftime("%Y-%m-%d")
-        output_record['D1CHGU'] = output_record['D1CHGU'][0:9]
-        output_record['D1CRTU'] = output_record['D1CRTU'][0:9]        
-       
-        # mapping for D4ADRDSC
-        try:
-            if output_record['D4ADRDSC']:
-                output_record['D4ADRDSC'] = D4ADRDSC_map[output_record['D4ADRDSC']]
-        except KeyError:
-            log_messages['Address Desc map failure'] = output_record['D4ADRDSC']
-            log_messages['Contact ID'] = output_record['D1SEQDM']
-            log_json_message(log_messages)
-            output_record['D4ADRDSC'] = output_record['D4ADRDSC'][0:59]
-        # mapping for D1POSN
-        try:
-            if output_record['D1POSN']:
-                output_record['D1POSN'] = D1POSN_map[output_record['D1POSN']]
-        except KeyError:
-            log_messages['Position map failure'] = output_record['D1POSN']
-            log_messages['Contact ID'] = output_record['D1SEQDM']
-            log_json_message(log_messages)
-            output_record['D1POSN'] = output_record['D4ADRDSC'][0:59]
-        
-        #check all fields
-        if not skip_record:
-            DLCMA00P_validate_fields(output_record)
-        if not skip_record:
-            # validate output record to specification
-            if not v.validate(output_record):
-                log_messages= v.errors
-                log_messages['Status'] = 'record skipped'           
-                log_json_message(log_messages)
-                loggily_json_message(log_messages)
-            else:
-                values = output_record.values()
-                database_insert(output_record)
 
-# Process Input File 2
-input_file = open(input_filename_2, 'r')
-# check for null values in input
-input_rec = csv.DictReader((line.replace('\0','') for line in input_file), delimiter=',')
-for row in input_rec:
-    # transform output record to field specifications
-    skip_record = False
-    log_messages = {}
-    output_record = {}
-    line_count += 1
-    
-    # initialize output_record keys
-    for x in range(0, len(DLCMA00P_Field_format),3):
-        output_record[DLCMA00P_Field_format[x]] = ''
-    
-    for col in field_map_indiv_contacts.keys():
-        # move data to output column
-        str_length = DLCMA00P_validator_schema[col]['maxlength'] - 1
-        output_record[col] = row[field_map_indiv_contacts[col]][0:str_length]
-    # Field specific mapping
-    output_record['D1CONO'] = '00'
-    output_record['D1EXCD'] = 'U'
-    output_record['D1SRFD'] = ''
-    output_record['D1SAL'] = ''
-    # phone number assembly
-    output_record['D1PHN1'] = (row['Individual Telephone Area Code'] + ' ' + row['Individual Telephone Number']).strip()
-    output_record['D1PHN2'] = (row['Individual Fax Area'] + ' ' + row['Individual Fax Number']).strip()
-    # Field specific tests
-    if row['Do Not Use Ind'] == 'N':
-        skip_record = True
-    else:
-        output_record['D4STS'] = 'A'
-    if output_record['D4ADRFMT'] == 'PRI':
-        output_record['D4ADRFMT'] = 'P'
-    else:
-        if output_record['D4ADRFMT'] == 'OTH':
-            output_record['D4ADRFMT'] = 'O'
-        else:
-            output_record['D4ADRFMT'] = ''
-            
-    # Registration and Change Timestamps and users
-    if output_record['D1CRTZ']:
-        output_record['D1CRTZ'] =  datetime.datetime.strptime(row['Create Date'], "%b %d, %Y").strftime("%Y-%m-%d")
-    if output_record['D1CHGZ']:
-        output_record['D1CHGZ'] =  datetime.datetime.strptime(row['Last Changed Date'], "%b %d, %Y").strftime("%Y-%m-%d")
-    output_record['D1CHGU'] = ''
-    output_record['D1CRTU'] = ''      
-    
-    # mapping for D1POSN
-    try:
-        if output_record['D1POSN']:
-            output_record['D1POSN'] = D1POSN_map[output_record['D1POSN']]
-    except KeyError:
-        log_messages['Position map failure'] = output_record['D1POSN']
-        log_messages['Contact ID'] = output_record['D1SEQDM']
-        log_json_message(log_messages)
-        output_record['D1POSN'] = output_record['D4ADRDSC'][0:59]
-    
-    #check all fields
-    if not skip_record:
-        DLCMA00P_validate_fields(output_record)
-    if not skip_record:
-        # validate output record to specification
-        if not v.validate(output_record):
-            log_messages= v.errors
-            log_messages['Status'] = 'record skipped'           
-            log_json_message(log_messages)
-            loggily_json_message(log_messages)
-        else:
-            values = output_record.values()
-            database_insert(output_record)
-input_file.close()
 # Process input file 3
 input_file = open(input_filename_3, 'r')
 # check for null values in input
@@ -354,13 +193,10 @@ for row in input_rec:
         output_record['D1CRTZ'] =  datetime.datetime.strptime(output_record['D1CRTZ'], "%b %d, %Y").strftime("%Y-%m-%d")
     if output_record['D1CHGZ']:
         output_record['D1CHGZ'] =  datetime.datetime.strptime(output_record['D1CHGZ'], "%b %d, %Y").strftime("%Y-%m-%d")
-        
+    
     # check Do Not Use indicator
     if output_record['D4STS'] == 'Y':
         skip_record = True
-        
-    # Pad D1SEQDM to 8 characters
-    output_record['D1SEQDM'] = output_record['D1SEQDM'].zfill(8)
 
     # retrieve the existing contacts master record
     if not skip_record:

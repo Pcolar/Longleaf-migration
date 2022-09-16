@@ -25,7 +25,7 @@ DLCC00P_encoding = {'C5CN': 'ascii','C5CTYP': 'ascii','C5EFDT': 'ascii','C5CODE'
 DLCC00P_validator_schema = {'C5CN':{'type':'string','required':True,'maxlength':10},'C5CTYP':{'type':'string','required':True,'maxlength':8},'C5EFDT':{'type':'string','required':True,'maxlength':10},'C5CODE':{'type':'string','required':True,'maxlength':3}}
 DLCC00P_record = DLCC00P_encoding.keys()
 llmigration_table='customer_classification'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCC00P/Customer Master - DLCM00P Final.csv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCM00P/Customer Master - DLCM00P Final.csv'
 output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLCC00P/DLCC00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 
@@ -78,7 +78,11 @@ def check_customer_master(item_key):
         qry = 'Select C1CN from customer_master where C1CN = %s'
         cursor.execute(qry, item_list)
         connection.commit()
-        cust_master_rec = cursor.fetchall()
+        cust_master_rec = cursor.fetchone()
+        if not cust_master_rec:
+            skip_record = True
+            log_messages['customer_master not found'] = item_key
+            # log_json_message(log_messages)
     except mysql.connector.DatabaseError as error:
         skip_record = True
         # skip error reporting if record not found in Customer Master
