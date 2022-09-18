@@ -95,9 +95,10 @@ def DLCMP00P_validate_fields(record):
     global skip_record
     # field specific mapping
     
-    # format P9PRPC
+    # format numbers
     if record['P9PRPC']:
         record['P9PRPC'] = '{:.2f}'.format(float(record['P9PRPC']))
+    record['P9TQTY'] =  record['P9TQTY'].zfill(7)
            
 ### MAIN ###  
 # field validator setup

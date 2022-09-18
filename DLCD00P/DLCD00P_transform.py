@@ -83,7 +83,7 @@ def database_insert(insert_record):
         connection.commit()
         insert_count += 1
     except mysql.connector.DatabaseError as error:
-        if not 'Duplicate' in error:
+        if not 'Duplicate' in str(error):
             log_messages['MySQL_insert'] = str(error)
             log_json_message(log_messages)
         skip_record = True
@@ -108,12 +108,11 @@ def check_customer_master(item_key):
         log_messages['customer_master record not found'] = item_key
         log_json_message(log_messages)    
         
-def DLCD00P_validate_fields(record, address_seq, skip_record):
+def DLCD00P_validate_fields(record):
     # field specific mapping
     # length of C4CN should be 8
-    while len(record['C4CN']) < 8:
-        record['C4CN'] = '0' + record['C4CN']
-    
+    global skip_record, address_seq
+    record['C4CN'] = record['C4CN'].zfill(8)
     log_messages['C4CN'] = record['C4CN']
     
     # field specifics
@@ -137,9 +136,7 @@ def DLCD00P_validate_fields(record, address_seq, skip_record):
             log_json_message(log_messages)
             
     # format sequence number
-    record['C4DLVN'] = str(address_seq)
-    if len(record['C4DLVN']) < 3:
-        record['C4DLVN'] = '{:0>3}'.format(record['C4DLVN'])
+    record['C4DLVN'] = str(address_seq).zfill(3)
     
 ### MAIN ###  
 # field validator setup
@@ -226,7 +223,7 @@ with open(input_filename) as csv_file:
                 address_seq = 0
 
             #check all fields
-            DLCD00P_validate_fields(output_record, address_seq, skip_record)
+            DLCD00P_validate_fields(output_record)
             
             # verify a corresponding customer master record exists
             check_customer_master(output_record['C4CN'])
