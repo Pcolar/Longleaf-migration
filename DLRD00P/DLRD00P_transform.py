@@ -9,7 +9,7 @@ from cerberus import Validator
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 # field mapper and formats
 from DLRD00P_map import *
 

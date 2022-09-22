@@ -11,7 +11,7 @@ import phonenumbers
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 # field mapper and formats
 from DLAPCM00P_map  import *
 from DLAPCM00P_format import *
@@ -83,7 +83,7 @@ def DLAPCM00P_validate_fields(record, skip_record):
         record['A1PYTC'] = A1PYTC_map[record['A1PYTC']]
         
     # verify phone and fax numer formats according to country
-    if len(record['A1PHN']) > 0:
+    if record['A1PHN']:
         try:
             phone_number = phonenumbers.parse(record['A1PHN'], record['A1CAD6'])
             if not phonenumbers.is_valid_number(phone_number):
@@ -95,7 +95,7 @@ def DLAPCM00P_validate_fields(record, skip_record):
             record['A1PHN'] = ''
             log_json_message(log_messages)
                 
-    if len(record['A1FAX']) > 0:
+    if record['A1FAX']:
         try:
             fax_number = phonenumbers.parse(record['A1FAX'], record['A1CAD6']) 
             if not phonenumbers.is_valid_number(fax_number):
@@ -110,7 +110,12 @@ def DLAPCM00P_validate_fields(record, skip_record):
     # Enforce format
     if record['A1DSCR']:
         record['A1DSCR'] = '{:.2f}'.record['A1DSCR']
-            
+    # enforce zipcode length
+    if record['A1CAD6'] == 'US':
+        record['A1CAD5'] = record['A1CAD5'].zfill(5)
+    if record['A1PAD6'] == 'US':
+        record['A1PAD5'] = record['A1PAD5'].zfill(5)
+    
     # Normalize Dates
     if record['A1REGZ']:
         timecalc = datetime.datetime.strptime(record['A1REGZ'], "%b %d, %Y").strftime("%Y-%m-%d")

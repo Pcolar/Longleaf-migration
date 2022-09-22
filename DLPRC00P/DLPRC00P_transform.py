@@ -15,7 +15,7 @@ from cerberus import Validator
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 # field mapper and formats
 from DLPRC00P_map import *
 from DLPRC00P_format import *
@@ -26,7 +26,7 @@ DLPRC00P_record = DLPRC00P_encoding.keys()
 
 log_messages={}
 llmigration_table= 'price_file'
-input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P.csv'
+input_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P Prices.csv'
 output_filename = '/Volumes/GoogleDrive/My Drive/UNC Press-Longleaf/DataSets/DLPRC00P/DLPRC00P-' + datetime.datetime.today().strftime('%Y%m%d') + '.tsv'
 skip_record = False
 previous_day = datetime.timedelta(1)

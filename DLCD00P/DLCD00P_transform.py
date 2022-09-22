@@ -28,7 +28,7 @@ import phonenumbers
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 # field mapper and formats
 from DLCD00P_map import *
 from DLCD00P_format import *
@@ -137,6 +137,11 @@ def DLCD00P_validate_fields(record):
             
     # format sequence number
     record['C4DLVN'] = str(address_seq).zfill(3)
+    # format zipcode
+    if record['C4DAD6'] == 'US':
+        # enforce US zipcode length
+        record['C4DAD5'] = output_record['C4DAD5'].zfill(5)
+
     
 ### MAIN ###  
 # field validator setup

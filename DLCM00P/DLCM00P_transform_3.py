@@ -10,7 +10,7 @@ import phonenumbers
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 from DLCM00P_client_field_format import *
 from DLCM00P_map  import *
 

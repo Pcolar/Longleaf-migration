@@ -11,7 +11,7 @@ from cerberus import Validator
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 # field mapper and formats
 from DLIMB00P_map import *
 from DLIMB00P_format import *

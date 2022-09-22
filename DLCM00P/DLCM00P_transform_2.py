@@ -10,7 +10,7 @@ import phonenumbers
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 from DLCD00P_map import *
 from DLCD00P_format import *
 
@@ -111,8 +111,9 @@ with open(input_filename) as csv_file:
         output_record['C1CN'] = row['Customer ID'].zfill(8)
         
         # map update fields
-        if row['Customer Tax Exempt Id']:
-            output_record['C1TXNO'] = row['Customer Tax Exempt Id'].split('*',1)[1][0:14]
+        output_record['C1TXNO'] = ''
+        #if row['Customer Tax Exempt Id']:
+        #    output_record['C1TXNO'] = row['Customer Tax Exempt Id'].split('*',1)[1][0:14]
         output_record['C1CAR'] = row['Ship Method IDs'][0:1]
         if int(row['Picklist Minimum Qty']) > 0:
             output_record['C1MIF'] = 'Y'

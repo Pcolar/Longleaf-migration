@@ -10,7 +10,7 @@ from cerberus import Validator
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 # field mapper and formats
 from DLIC00P_map  import *
 from DLIC00P_format import *
@@ -81,9 +81,9 @@ def DLIC00P_validate_fields(record):
     global skip_record
     # field specific mapping
     # normalize ISBN13
-    if len(record['I5I']) < 8:
-        record['I5I'] = record['I5I'].strip(' -.''')
-
+    record['I5I'] = record['I5I'].strip(' -.''')
+    record['I5I'] = record['I5I'].zfill(8)
+    
     # validate fields
     for field_index in range(0, len(DLIC00P_Field_format),3):
         field_type = field_index + 1
@@ -107,6 +107,8 @@ def DLIC00P_validate_fields(record):
 def write_output(record):   
     global skip_record, skipped_count, write_count 
     # Set Default
+    if not record['I5I']:
+        skip_record = True
     if not skip_record:
         DLIC00P_validate_fields(record)
     # output record    
@@ -241,9 +243,8 @@ with open(input_file) as csv_file:
             
         # Field specific mappings
         # move content to output record
-        if process_record['ISBN13']:
-            output_record['I5I'] = process_record['ISBN13'].zfill(8)
-        else:
+        output_record['I5I'] = process_record['ISBN13'].zfill(8)
+        if not process_record['ISBN13']:
             # no ISBN
             skip_record = True
         # set uniform effective date
@@ -279,72 +280,82 @@ for item_record in item_dict.items():
         skip_record = True
     else:
         output_record['I5I'] = re.sub('-','', output_record['I5I'])
-        output_record['I5I'] = re.sub('.','', output_record['I5I'])
+        #output_record['I5I'] = re.sub('\.','', output_record['I5I'])
     # set uniform effective date
     output_record['I5EFDT'] = '2022-08-01'
     output_record['I5ICE'] = ''
-    # mappings
-    # IC-SER
-    try:
-        output_record['I5ICT'] = 'IC-SER'
-        output_record['I5ICC'] = ic_ser_map[item_record[1][Series_ID]]
-        write_output(output_record)
-    except KeyError:
-        log_messages['IC-SER map not found'] = item_record[1][Series_ID]
-    # IC-SUBM
-    try:
-        output_record['I5ICT'] = 'IC-SUBM'
-        output_record['I5ICC'] = ic_subm_map[item_record[1][Minor_Disc_ID]]
-        write_output(output_record)
-    except KeyError:
-        log_messages['IC-SUBM map not found'] = item_record[1][Minor_Disc_ID]
-    # IC-INT
-    try:
-        output_record['I5ICT'] = 'IC-INT'
-        output_record['I5ICC'] = ic_int_map[item_record[1][Interest_Code]]
-        write_output(output_record)
-    except KeyError:
-        log_messages['IC-INT map not found'] = item_record[1][Interest_Code]
-    # IC-SEAS  
-    output_record['I5ICT'] = 'IC-SEAS'
-    output_record['I5ICC'] = item_record[1][Season]
-    write_output(output_record)
-    # IC-SUBJ
-    output_record['I5ICT'] = 'IC-SUBJ'
-    output_record['I5ICC'] = item_record[1][BISAC1][:-1]
-    write_output(output_record)
-    output_record['I5ICT'] = 'IC-SUBJ'
-    output_record['I5ICC'] = item_record[1][BISAC2][:-1]
-    write_output(output_record)
-    output_record['I5ICT'] = 'IC-SUBJ'
-    output_record['I5ICC'] = item_record[1][BISAC3][:-1]
-    write_output(output_record)
-    # IC-ROY
+    
     # retrieve the corresponding item record
     try:
-        qry = 'Select Royalties_Flag from informer_DLIM00P where I1I = %s or I1AI = %s'
+        qry = 'Select Royalties_Flag, User_Field_Value_3 from informer_DLIM00P where I1I = %s or I1AI = %s'
         item_list = [output_record['I5I'], output_record['I5I']]
         cursor.execute(qry, item_list)
         connection.commit()
         item_master_rec = cursor.fetchone()
         if not item_master_rec:
             skip_record = True
-            log_messages['IC-ROY item_master not found'] = output_record['I5I'] 
+            log_messages['item_master not found'] = output_record['I5I'] 
             output_record['I5ICC'] = 'N'
         else:
-            if item_master_rec[0] == 'Y':
-                output_record['I5ICC'] = ''
-            else:
-                output_record['I5ICC'] = 'N'
+            Royalties_Flag = item_master_rec[0]
+            User_Field_Value_3 = item_master_rec[1]
     except mysql.connector.DatabaseError as error:
-        output_record['I5ICC'] = 'N'
+        skip_record = True
         log_messages['MySQL_query'] = str(error)
-        log_messages['IC-ROY item_master not found'] = output_record['I5I']    
-    output_record['I5ICT'] = 'IC-ROY'
-    #if log_messages:
-        #log_json_message(log_messages)
-    write_output(output_record)
-        
+        log_messages['item_master not found'] = output_record['I5I']
+        skipped_count += 1
+    if len(log_messages.keys()) > 1:
+            log_json_message(log_messages)
+            
+    if not skip_record:
+        # IC-ROY
+        output_record['I5ICT'] = 'IC-ROY'
+        if Royalties_Flag == 'Y':
+            output_record['I5ICC'] = ''
+        else:
+            output_record['I5ICC'] = 'N'
+        write_output(output_record)
+
+        # IC-SER
+        try:
+            output_record['I5ICT'] = 'IC-SER'
+            output_record['I5ICC'] = ic_ser_map[item_record[1][Series_ID]]
+            write_output(output_record)
+        except KeyError:
+            log_messages['IC-SER map not found'] = item_record[1][Series_ID]
+        # IC-SUBM
+        try:
+            output_record['I5ICT'] = 'IC-SUBM'
+            output_record['I5ICC'] = ic_subm_map[item_record[1][Minor_Disc_ID]]
+            write_output(output_record)
+        except KeyError:
+            log_messages['IC-SUBM map not found'] = item_record[1][Minor_Disc_ID]
+        # IC-INT
+        try:
+            output_record['I5ICT'] = 'IC-INT'
+            output_record['I5ICC'] = ic_int_map[item_record[1][Interest_Code]]
+            write_output(output_record)
+        except KeyError:
+            log_messages['IC-INT map not found'] = item_record[1][Interest_Code]
+        # IC-SEAS  
+        output_record['I5ICT'] = 'IC-SEAS'
+        output_record['I5ICC'] = item_record[1][Season]
+        write_output(output_record)
+        # IC-SUBJ
+        output_record['I5ICT'] = 'IC-SUBJ'
+        output_record['I5ICC'] = item_record[1][BISAC1][:-1]
+        write_output(output_record)
+        output_record['I5ICT'] = 'IC-SUBJ'
+        output_record['I5ICC'] = item_record[1][BISAC2][:-1]
+        write_output(output_record)
+        output_record['I5ICT'] = 'IC-SUBJ'
+        output_record['I5ICC'] = item_record[1][BISAC3][:-1]
+        write_output(output_record)
+        # IC-PROPR
+        output_record['I5ICT'] = 'IC-PROPR'
+        if User_Field_Value_3 == 'M' or User_Field_Value_3 == 'N':
+            output_record['I5ICC'] = User_Field_Value_3
+            write_output(output_record)      
         
 # close database connection
 if connection.is_connected():

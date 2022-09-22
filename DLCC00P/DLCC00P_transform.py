@@ -14,7 +14,7 @@ import phonenumbers
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 # field mapper and formats
 from DLCC00P_map  import *
 from DLCC00P_format import *

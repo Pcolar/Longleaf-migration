@@ -10,7 +10,7 @@ from cerberus import Validator
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 from DLCD00P_format import *
 
 # Globals
@@ -184,7 +184,7 @@ with open(input_filename_2) as csv_file:
             create_date = create_limit
         customer_info[output_record['C1CN']] = [create_date, purchase_date]
         # Update the Customer Master record with the account number
-        if row['Default Order Bill To ID']:
+        if row['Default Order Bill To ID'] > '0':
             output_record['C1BN'] = row['Default Order Bill To ID']
             DLCM00P_update_record(output_record['C1CN'], output_record['C1BN'])
             

@@ -10,7 +10,7 @@ import phonenumbers
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 # field mapper and formats
 from DLCM00P_map  import *
 from DLCM00P_format import *
@@ -91,6 +91,10 @@ def DLCM00P_validate_fields(record):
             log_json_message(log_messages)
     # limit C1CMNT to 40 chars and redact non-printables
     record['C1CMNT'] = re.sub(redact_char, "", record['C1CMNT'])[0:39]
+    # Limit name and addresses to 60 chars
+    record['C1REGN'] = record['C1REGN'][0:59]
+    record['C1PCNM'] = record['C1PCNM'][0:59]
+    
     # Map C1CTO
     if record['C1CTO'] == 'F1':
         record['C1CTO'] = 'Y'
@@ -184,6 +188,9 @@ with open(input_filename) as csv_file:
         output_record['C1PAD4'] = output_record['C1PAD4'][0:19]
         output_record['C1PAD5'] = output_record['C1PAD5'][0:19]
         output_record['C1PAD6'] = output_record['C1PAD6'][0:34]
+        if output_record['C1PAD6'] == 'US':
+            # enforce zipcode length
+            output_record['C1PAD5'] = output_record['C1PAD5'].zfill(5)
         output_record['C1PDLVN'] = '000'
         output_record['C1PHN'] = (row['Telephone Area'] + ' ' + row['Telephone Number']).strip()
         output_record['C1FAX'] = (row['Fax Area'] + ' ' + row['Fax Number']).strip()
@@ -220,6 +227,7 @@ with open(input_filename) as csv_file:
         output_record['C1IBR'] = '00'
         output_record['C1MIF'] = 'N'
         output_record['C1PRCD'] = '00'
+        output_record['C1AFCG'] = 'N'
 
         if output_record['C1CCLS']:
             try:

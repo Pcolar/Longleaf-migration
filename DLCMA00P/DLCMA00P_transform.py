@@ -14,7 +14,7 @@ import phonenumbers
 import mysql.connector
 
 # hidden parameters
-from secrets import *
+from llsecrets import *
 # field mapper and formats
 from DLCMA00P_map import *
 from DLCMA00P_format import *
@@ -140,6 +140,9 @@ def DLCMA00P_validate_fields(record):
         record['D4ADRL6'] = ''  
     else:
         record['D4ADRL6'] = record['D4ADRL6'].upper()
+    # enforce US zipcode format
+    if country == 'US':
+        record['D4ADRL5'] = record['D4ADRL5'].zfill(5)
 ### MAIN ###  
 # field validator setup
 v = Validator(DLCMA00P_validator_schema)
