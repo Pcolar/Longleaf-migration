@@ -72,26 +72,6 @@ def database_insert(insert_record):
             log_json_message(log_messages)
         skip_record = True
 
-# Verify an item master record exists in the database
-def check_item_master(item_key):
-    import mysql.connector
-    global cursor, skip_record
-    item_list = [item_key]
-    try:
-        qry = 'Select I1I from item_master where I1I = %s'
-        cursor.execute(qry, item_list)
-        connection.commit()
-        item_master_rec = cursor.fetchone()
-        if not item_master_rec:
-            skip_record = True
-            log_messages['item_master not found'] = item_key
-            log_json_message(log_messages)
-    except mysql.connector.DatabaseError as error:
-        skip_record = True
-        log_messages['MySQL_query'] = str(error)
-        log_messages['item_master not found'] = item_key
-        log_json_message(log_messages)    
-
 # Verify an contact master record exists in the database
 def check_contact_master(item_key):
     import mysql.connector

@@ -8,9 +8,7 @@
 ###     Address Line 2	
 ###     Address Line 3	
 ###     City	
-###     Zip Code
-###     Address Id ASC
-###
+###     Zip Code###
 ### 	Data -> Tables -> remove duplicates
 ### 		Columns A, E, G, H, J, M
 ###     format numeric fields as 'number, zero decimal places'

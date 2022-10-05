@@ -2,7 +2,7 @@
 ### NOTE: Book Contacts-Contacts Master.csv and Individual Contacts Using Gen CompIndiv Names.csv
 ###  are inserted into the DB as incomplete records
 ###   Individual Contact Addresses using Gen CompInd Addresses is used to update specific fields in the database table.
-###  DLCMA00P_transform_2 extracts the data to a tsv file.
+###  DLCMA00P_extractor extracts the data to a tsv file.
 import json
 import csv
 import datetime, time

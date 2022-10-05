@@ -1,3 +1,5 @@
+###  DLTXT00P – Text file contains multiple lines of text data per item or customer.
+
 import json
 import csv
 import datetime
